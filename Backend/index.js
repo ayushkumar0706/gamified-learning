@@ -6,7 +6,8 @@ const connectDB = require('./config/database');
 const authRouter = require('./routes/authRoutes');
 const topicRouter = require('./routes/topicRoutes');
 const levelRouter = require('./routes/levelRoutes');
-const videoResourceRouter = require('./routes/videoRoutes'); 
+const videoResourceRouter = require('./routes/videoRoutes');
+const quizRoutes = require('./routes/quizRoutes');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/topics', topicRouter);
 app.use('/api/levels', levelRouter);
 app.use('/api/videoresources', videoResourceRouter); 
+app.use('/api/quizzes', quizRoutes); 
 
 
 
