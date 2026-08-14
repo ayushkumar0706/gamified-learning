@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
-const authMiddleware = require('../middleware/authMiddleware');
-const restrictTo = require('../middleware/roleMiddleware');
+const authMiddleware = require('../middlewares/authMiddleware');
+const restrictTo = require('../middlewares/roleMiddleware');
 
-const { createVideoResource, getAllVideoResources, getVideoResourceById,  upvoteVideoResource, updateVideoResource,  deleteVideoResource} = require('../controllers/videoResourceController');
+const { createVideoResource, getAllVideoResources, getVideoResourceById,  upvoteVideoResource, updateVideoResource,  deleteVideoResource} = require('../controllers/videoController');
 
 
 router.get('/', getAllVideoResources);

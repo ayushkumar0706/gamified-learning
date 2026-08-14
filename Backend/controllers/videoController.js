@@ -1,5 +1,6 @@
-const VideoResource = require('../models/VideoResource');
-const Topic = require('../models/Topic');
+const VideoResource = require('../Models/videoResource');
+const Topic = require('../Models/topic');
+const { isPrivilegedRole } = require('../utils/permissions');
 
 
 const createVideoResource = async (req, res) => {
@@ -43,7 +44,7 @@ const getAllVideoResources = async (req, res) => {
 const getVideoResourceById = async (req, res) => {
   try {
     const video = await VideoResource.findById(req.params.id)
-      .populate('topic', 'name')
+      .populate('topic', 'title')
       .populate('submittedBy', 'name');
 
     if (!video) {
@@ -86,7 +87,6 @@ const upvoteVideoResource = async (req, res) => {
 };
 
 
-
 const updateVideoResource = async (req, res) => {
   try {
     const video = await VideoResource.findById(req.params.id);
@@ -96,7 +96,7 @@ const updateVideoResource = async (req, res) => {
     }
 
     const isOwner = video.submittedBy.toString() === req.user._id.toString();
-    const isPrivileged = ['senior', 'admin'].includes(req.user.role);
+    const isPrivileged = isPrivilegedRole(req.user.role);
 
     if (!isOwner && !isPrivileged) {
       return res.status(403).json({ message: "You don't have permission to edit this video" });
@@ -117,7 +117,6 @@ const updateVideoResource = async (req, res) => {
 };
 
 
-
 const deleteVideoResource = async (req, res) => {
   try {
     const video = await VideoResource.findById(req.params.id);
@@ -127,7 +126,7 @@ const deleteVideoResource = async (req, res) => {
     }
 
     const isOwner = video.submittedBy.toString() === req.user._id.toString();
-    const isPrivileged = ['senior', 'admin'].includes(req.user.role);
+    const isPrivileged = isPrivilegedRole(req.user.role);
 
     if (!isOwner && !isPrivileged) {
       return res.status(403).json({ message: "You don't have permission to delete this video" });

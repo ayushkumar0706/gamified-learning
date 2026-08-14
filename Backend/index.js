@@ -8,6 +8,7 @@ const topicRouter = require('./routes/topicRoutes');
 const levelRouter = require('./routes/levelRoutes');
 const videoResourceRouter = require('./routes/videoRoutes');
 const quizRoutes = require('./routes/quizRoutes');
+const codingResourceRoutes = require('./routes/codingRoutes');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use('/api/topics', topicRouter);
 app.use('/api/levels', levelRouter);
 app.use('/api/videoresources', videoResourceRouter); 
 app.use('/api/quizzes', quizRoutes); 
+app.use('/api/coding-resources', codingResourceRoutes);
 
 
 
