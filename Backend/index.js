@@ -9,6 +9,8 @@ const levelRouter = require('./routes/levelRoutes');
 const videoResourceRouter = require('./routes/videoRoutes');
 const quizRoutes = require('./routes/quizRoutes');
 const codingResourceRoutes = require('./routes/codingRoutes');
+const attemptRoutes = require('./routes/attemptRoutes');
+const progressRoutes = require('./routes/progressRoutes');
 
 const app = express();
 
@@ -21,6 +23,8 @@ app.use('/api/levels', levelRouter);
 app.use('/api/videoresources', videoResourceRouter); 
 app.use('/api/quizzes', quizRoutes); 
 app.use('/api/coding-resources', codingResourceRoutes);
+app.use('/api/attempts', attemptRoutes);
+app.use('/api/progress', progressRoutes);
 
 
 
