@@ -56,6 +56,18 @@ const userSchema = new Schema({
         type: String,
         enum: ["student", "senior", "admin"],
         default: "student"
+    },
+    currentStreak: { 
+        type: Number,
+        default: 0
+    },
+    lastActivityDate: { 
+        type: Date,
+        default: null
+    },
+    maxStreak: { 
+        type: Number, 
+        default: 0 
     }
 
 }, {timestamps: true});
