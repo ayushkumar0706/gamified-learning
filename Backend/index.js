@@ -7,24 +7,34 @@ const authRouter = require('./routes/authRoutes');
 const topicRouter = require('./routes/topicRoutes');
 const levelRouter = require('./routes/levelRoutes');
 const videoResourceRouter = require('./routes/videoRoutes');
-const quizRoutes = require('./routes/quizRoutes');
-const codingResourceRoutes = require('./routes/codingRoutes');
-const attemptRoutes = require('./routes/attemptRoutes');
-const progressRoutes = require('./routes/progressRoutes');
+const quizRouter = require('./routes/quizRoutes');
+const codingResourceRouter = require('./routes/codingRoutes');
+const attemptRouter = require('./routes/attemptRoutes');
+const progressRouter = require('./routes/progressRoutes');
+const dashboardRouter = require('./routes/dashboardRoutes');
+const userRouter = require('./routes/userRoutes');
+
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
 
+app.use((req, res, next) => {
+    console.log(`Incoming: ${req.method} ${req.originalUrl}`);
+    next();
+});
+
 app.use('/api/auth', authRouter);
 app.use('/api/topics', topicRouter);
 app.use('/api/levels', levelRouter);
 app.use('/api/videoresources', videoResourceRouter); 
-app.use('/api/quizzes', quizRoutes); 
-app.use('/api/coding-resources', codingResourceRoutes);
-app.use('/api/attempts', attemptRoutes);
-app.use('/api/progress', progressRoutes);
+app.use('/api/quizzes', quizRouter); 
+app.use('/api/coding-resources', codingResourceRouter);
+app.use('/api/attempt', attemptRouter);
+app.use('/api/progress', progressRouter)
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/users', userRouter);
 
 
 
