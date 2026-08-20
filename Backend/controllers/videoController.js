@@ -69,7 +69,7 @@ const upvoteVideoResource = async (req, res) => {
         $addToSet: { upvotedBy: req.user._id },
         $inc: { upvotes: 1 }
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updatedVideo) {

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Quiz = require('../Models/quiz');
 const Question = require('../Models/question');
 const Topic = require('../Models/topic');
@@ -5,20 +6,29 @@ const { generateQuestionsForTopic } = require('../utils/generateQuestions');
 
 
 const createQuiz = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { topicId, difficultyLevel, count } = req.body;
 
     const topic = await Topic.findById(topicId);
     if (!topic) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: "Topic not found" });
     }
 
-    const quiz = await Quiz.create({
-      topic: topicId,
-      difficultyLevel: difficultyLevel || 'beginner',
-      source: 'llm-generated'
-    });
+    const quizArray = await Quiz.create(
+      [{
+        topic: topicId,
+        difficultyLevel: difficultyLevel || 'beginner',
+        source: 'llm-generated'
+      }],
+      { session }
+    );
 
+    const quiz = quizArray[0]; // Quiz.create with a session returns an array
 
     let generatedQuestions;
     try {
@@ -28,10 +38,10 @@ const createQuiz = async (req, res) => {
         count || 10
       );
     } catch (err) {
-      await Quiz.findByIdAndDelete(quiz._id);
+      await session.abortTransaction();
+      session.endSession();
       return res.status(502).json({ message: `Question generation failed: ${err.message}` });
     }
-
 
     const questionDocs = generatedQuestions.map((q) => ({
       quiz: quiz._id,
@@ -43,18 +53,23 @@ const createQuiz = async (req, res) => {
 
     let savedQuestions;
     try {
-      savedQuestions = await Question.insertMany(questionDocs);
+      savedQuestions = await Question.insertMany(questionDocs, { session });
     } catch (err) {
-      await Quiz.findByIdAndDelete(quiz._id);
+      await session.abortTransaction();
+      session.endSession();
       return res.status(502).json({ message: `Saving generated questions failed: ${err.message}` });
     }
 
+    await session.commitTransaction();
+    session.endSession();
+
     res.status(201).json({ quiz, questions: savedQuestions });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     res.status(500).json({ message: error.message });
   }
 };
-
 
 
 const getQuizForTaking = async (req, res) => {
@@ -78,7 +93,6 @@ const getQuizForTaking = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 
 module.exports = { createQuiz, getQuizForTaking };

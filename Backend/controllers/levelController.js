@@ -51,7 +51,7 @@ const updateLevel = async (req, res) => {
     const level = await Level.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true, context: 'query' }
+      { returnDocument: 'after', runValidators: true, context: 'query' }
     );
 
     if (!level) {

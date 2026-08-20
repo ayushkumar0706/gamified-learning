@@ -55,7 +55,7 @@ const updateTopic = async (req, res) => {
     const topic = await Topic.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true, context: 'query' }
+      { returnDocument: 'after', runValidators: true, context: 'query' }
     );
 
     if (!topic) {

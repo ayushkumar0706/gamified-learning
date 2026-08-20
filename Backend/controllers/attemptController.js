@@ -4,6 +4,7 @@ const Quiz = require('../Models/quiz');
 const User = require('../Models/user');
 const Progress = require('../Models/progress');
 const { calculateLevel } = require('../utils/xpToLevel');
+const { getISTDayDifference } = require('../utils/streak');
 
 
 const checkAnswer = async (req, res) => {
@@ -68,6 +69,34 @@ const submitAttempt = async (req, res) => {
     const levelInfo = calculateLevel(user.xp);
     user.level = levelInfo.level;
 
+
+    // Update streak
+    const now = new Date();
+
+    if (!user.lastActivityDate) {
+
+      user.currentStreak = 1;
+    } else {
+      const dayDiff = getISTDayDifference(user.lastActivityDate, now);
+
+      if (dayDiff === 0) {
+
+      } else if (dayDiff === 1) {
+
+        user.currentStreak += 1;
+      } else {
+
+        user.currentStreak = 1;
+      }
+    }
+
+    user.lastActivityDate = now;
+
+    if (user.currentStreak > user.maxStreak) {
+      user.maxStreak = user.currentStreak;
+    }
+
+
     await user.save();
 
     
@@ -78,7 +107,7 @@ const submitAttempt = async (req, res) => {
         $max: { bestScorePercentage: scorePercentage },
         $setOnInsert: { user: req.user._id, topic: quiz.topic }
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     if (scorePercentage >= 70 && progress.status !== "completed") {

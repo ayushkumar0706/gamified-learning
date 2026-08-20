@@ -7,4 +7,4 @@ const router = express.Router();
 
 router.get('/me', authMiddleware, getMyProgress);
 
-module.exports = router;
+module.exports = router;    
