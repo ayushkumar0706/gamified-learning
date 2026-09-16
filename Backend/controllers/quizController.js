@@ -95,4 +95,20 @@ const getQuizForTaking = async (req, res) => {
 };
 
 
-module.exports = { createQuiz, getQuizForTaking };
+const getQuizzesByTopic = async (req, res) => {
+  try {
+    const { topic } = req.query;
+
+    if (!topic) {
+      return res.status(400).json({ message: "topic query param is required" });
+    }
+
+    const quizzes = await Quiz.find({ topic });
+    res.status(200).json({ quizzes });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+module.exports = { createQuiz, getQuizForTaking, getQuizzesByTopic };

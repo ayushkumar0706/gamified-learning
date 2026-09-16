@@ -55,7 +55,12 @@ async function login ( req, res ){
         }
 
         const token = user.getJWT();
-        res.cookie('token', token);
+        res.cookie('token', token, {
+        httpOnly: true,
+        sameSite: 'lax', 
+        secure: false,   // set true in production (requires HTTPS)
+        maxAge: 24 * 60 * 60 * 1000, // 1 day, adjust
+        });
 
         res.status(200).json({ message: "Login successful" });
 
@@ -67,4 +72,18 @@ async function login ( req, res ){
 }
 
 
-module.exports = { login, register };
+async function logout(req, res) {
+  try {
+    res.clearCookie('token', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+    });
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
+
+module.exports = { login, register, logout };

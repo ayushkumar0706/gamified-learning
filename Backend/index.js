@@ -13,12 +13,19 @@ const attemptRouter = require('./routes/attemptRoutes');
 const progressRouter = require('./routes/progressRoutes');
 const dashboardRouter = require('./routes/dashboardRoutes');
 const userRouter = require('./routes/userRoutes');
+const cors = require('cors')
 
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
+
+
+app.use(cors({
+    origin: 'http://localhost:5173', 
+    credentials: true,              
+}))
 
 app.use((req, res, next) => {
     console.log(`Incoming: ${req.method} ${req.originalUrl}`);
@@ -31,7 +38,7 @@ app.use('/api/levels', levelRouter);
 app.use('/api/videoresources', videoResourceRouter); 
 app.use('/api/quizzes', quizRouter); 
 app.use('/api/coding-resources', codingResourceRouter);
-app.use('/api/attempt', attemptRouter);
+app.use('/api/attempts', attemptRouter);
 app.use('/api/progress', progressRouter)
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/users', userRouter);

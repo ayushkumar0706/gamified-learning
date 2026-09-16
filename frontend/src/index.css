@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+
+@theme {
+  --color-brand: oklch(0.55 0.18 275);       
+  --color-brand-light: oklch(0.95 0.03 275);
+  --color-success: oklch(0.6 0.15 155);       
+  --color-success-light: oklch(0.95 0.05 155);
+  --color-danger: oklch(0.6 0.18 15);       
+  --color-danger-light: oklch(0.95 0.03 15);
+  --color-surface: oklch(0.98 0.005 260);    
+}
+
+body {
+  background-color: var(--color-surface);
+}

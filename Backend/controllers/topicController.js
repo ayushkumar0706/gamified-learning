@@ -25,7 +25,10 @@ const createTopic = async (req, res) => {
 // Get all topics
 const getAllTopics = async (req, res) => {
   try {
-    const topics = await Topic.find().sort({ order: 1 }).populate('level');;
+    const { level } = req.query;
+    const filter = level ? { level } : {};
+
+    const topics = await Topic.find(filter).sort({ order: 1 }).populate('level');
     res.status(200).json({ topics });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -30,9 +30,13 @@ const createVideoResource = async (req, res) => {
 
 const getAllVideoResources = async (req, res) => {
   try {
-    const videos = await VideoResource.find({ status: 'active' })
-      .populate('topic', 'name')
-      .populate('submittedBy', 'name');
+    const { topic } = req.query;
+    const filter = { status: 'active' };
+    if (topic) filter.topic = topic;
+
+    const videos = await VideoResource.find(filter)
+      .populate('topic', 'title')
+      .populate('submittedBy', 'firstName');
 
     res.status(200).json({ videos });
   } catch (error) {
@@ -45,7 +49,7 @@ const getVideoResourceById = async (req, res) => {
   try {
     const video = await VideoResource.findById(req.params.id)
       .populate('topic', 'title')
-      .populate('submittedBy', 'name');
+      .populate('submittedBy', 'firstName');
 
     if (!video) {
       return res.status(404).json({ message: "Video not found" });
