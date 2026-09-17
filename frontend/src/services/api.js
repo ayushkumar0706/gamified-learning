@@ -1,4 +1,10 @@
-const BASE_URL = 'http://localhost:3000/api'
+const configuredBaseUrl = import.meta.env.VITE_BASE_URL
+
+if (!configuredBaseUrl) {
+  throw new Error('VITE_BASE_URL is not configured. Set it in the frontend deployment environment and rebuild.')
+}
+
+const BASE_URL = `${configuredBaseUrl.replace(/\/$/, '').replace(/\/api$/, '')}/api`
 
 async function request(endpoint, options = {}) {
   const res = await fetch(`${BASE_URL}${endpoint}`, {
