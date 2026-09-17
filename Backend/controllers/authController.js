@@ -1,6 +1,14 @@
 const bcrypt = require('bcrypt');
 const User = require("../Models/user");
 
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+const authCookieOptions = {
+    httpOnly: true,
+    sameSite: isProduction ? 'none' : 'lax',
+    secure: isProduction,
+    maxAge: 24 * 60 * 60 * 1000,
+};
+
 
 
 async function register(req, res) {
@@ -55,12 +63,7 @@ async function login ( req, res ){
         }
 
         const token = user.getJWT();
-        res.cookie('token', token, {
-        httpOnly: true,
-        sameSite: 'lax', 
-        secure: false,   // set true in production (requires HTTPS)
-        maxAge: 24 * 60 * 60 * 1000, // 1 day, adjust
-        });
+        res.cookie('token', token, authCookieOptions);
 
         res.status(200).json({ message: "Login successful" });
 
@@ -74,11 +77,7 @@ async function login ( req, res ){
 
 async function logout(req, res) {
   try {
-    res.clearCookie('token', {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-    });
+        res.clearCookie('token', authCookieOptions);
     res.status(200).json({ message: 'Logged out successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
