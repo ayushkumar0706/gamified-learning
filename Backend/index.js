@@ -13,6 +13,8 @@ const attemptRouter = require('./routes/attemptRoutes');
 const progressRouter = require('./routes/progressRoutes');
 const dashboardRouter = require('./routes/dashboardRoutes');
 const userRouter = require('./routes/userRoutes');
+const collegeRouter = require('./routes/collegeRoutes');
+const leaderboardRouter = require('./routes/leaderboardRoutes');
 const cors = require('cors')
 
 
@@ -23,7 +25,7 @@ app.use(cookieParser());
 
 
 app.use(cors({
-    origin: 'http://localhost:5173', 
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
     credentials: true,              
 }))
 
@@ -39,9 +41,11 @@ app.use('/api/videoresources', videoResourceRouter);
 app.use('/api/quizzes', quizRouter); 
 app.use('/api/coding-resources', codingResourceRouter);
 app.use('/api/attempts', attemptRouter);
-app.use('/api/progress', progressRouter)
+app.use('/api/progress', progressRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/users', userRouter);
+app.use('/api/colleges', collegeRouter);
+app.use('/api/leaderboard', leaderboardRouter);
 
 
 

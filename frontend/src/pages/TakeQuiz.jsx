@@ -1,18 +1,142 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import {
+  ChevronLeft, ChevronRight, Zap, CheckCircle2, XCircle,
+  AlertCircle, BookOpen, ArrowRight, Trophy
+} from 'lucide-react';
 
+// ── Loading skeleton ──────────────────────────────────────────────────────────
+function QuizSkeleton() {
+  return (
+    <div className="page-container max-w-2xl mx-auto space-y-5">
+      <div className="skeleton h-5 w-32 rounded-lg" />
+      <div className="skeleton h-2 w-full rounded-full" />
+      <div className="skeleton h-32 rounded-xl" />
+      <div className="space-y-2.5">
+        {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-14 rounded-xl" />)}
+      </div>
+    </div>
+  );
+}
+
+// ── Result screen ─────────────────────────────────────────────────────────────
+function ResultScreen({ result, navigate }) {
+  const pct = result.scorePercentage;
+  const passed = pct >= 70;
+
+  return (
+    <div className="page-container max-w-xl mx-auto animate-fade-in">
+      <div className="card text-center py-8 px-6">
+        {/* Score circle */}
+        <div
+          className={`w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-5 ${
+            passed
+              ? 'bg-[var(--color-success-light)] text-[var(--color-success)]'
+              : 'bg-[var(--color-danger-light)] text-[var(--color-danger)]'
+          }`}
+        >
+          {pct}%
+        </div>
+
+        <h1 className="text-2xl font-black text-[var(--color-text)] mb-1">
+          {passed ? '🎉 Quiz Passed!' : '📚 Keep Practicing'}
+        </h1>
+        <p className="text-[var(--color-text-muted)] mb-6">
+          {result.correctCount} / {result.totalQuestions} correct
+          {passed ? ' — Great work!' : ' — Try again to improve your score.'}
+        </p>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {/* XP earned */}
+          <div className="rounded-xl p-3.5 bg-[var(--color-xp-light)] text-center">
+            <p className="text-2xl font-black text-[var(--color-xp-dark)]">
+              +{result.attempt?.xpAwarded ?? 0}
+            </p>
+            <p className="text-xs font-medium text-[var(--color-text-muted)] mt-0.5 flex items-center justify-center gap-1">
+              <Zap size={11} className="text-[var(--color-xp)]" /> XP Earned
+            </p>
+          </div>
+
+          {/* Platform level */}
+          <div className="rounded-xl p-3.5 bg-[var(--color-primary-light)] text-center">
+            <p className="text-2xl font-black text-[var(--color-primary)]">
+              {result.levelInfo?.level ?? '—'}
+            </p>
+            <p className="text-xs font-medium text-[var(--color-text-muted)] mt-0.5">
+              Platform Level
+            </p>
+          </div>
+
+          {/* Status */}
+          <div className={`rounded-xl p-3.5 text-center ${
+            passed ? 'bg-[var(--color-success-light)]' : 'bg-[var(--color-bg)]'
+          }`}>
+            {passed
+              ? <CheckCircle2 size={24} className="text-[var(--color-success)] mx-auto mb-0.5" />
+              : <XCircle size={24} className="text-[var(--color-text-subtle)] mx-auto mb-0.5" />}
+            <p className="text-xs font-medium text-[var(--color-text-muted)]">
+              {passed ? 'Completed' : 'Incomplete'}
+            </p>
+          </div>
+        </div>
+
+        {/* Progress XP bar */}
+        {result.levelInfo && (
+          <div className="mb-6">
+            <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-1.5">
+              <span>XP Progress</span>
+              <span>{result.levelInfo.xpIntoCurrentLevel} / {result.levelInfo.xpIntoCurrentLevel + result.levelInfo.xpNeededForNextLevel}</span>
+            </div>
+            <div className="xp-bar">
+              <div
+                className="xp-bar-fill"
+                style={{
+                  '--xp-pct': `${Math.round((result.levelInfo.xpIntoCurrentLevel / (result.levelInfo.xpIntoCurrentLevel + result.levelInfo.xpNeededForNextLevel)) * 100)}%`,
+                  width: `${Math.round((result.levelInfo.xpIntoCurrentLevel / (result.levelInfo.xpIntoCurrentLevel + result.levelInfo.xpNeededForNextLevel)) * 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            onClick={() => navigate(-1)}
+            className="btn btn-secondary"
+          >
+            <ChevronLeft size={16} />
+            Back to Topic
+          </button>
+          <button
+            onClick={() => navigate('/journey')}
+            className="btn btn-primary"
+          >
+            <Trophy size={16} />
+            My Journey
+            <ArrowRight size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main quiz component ───────────────────────────────────────────────────────
 export default function TakeQuiz() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  const [quiz, setQuiz] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
+  const [quiz,                 setQuiz]                 = useState(null);
+  const [questions,            setQuestions]            = useState([]);
+  const [answers,              setAnswers]              = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(null);
+  const [loading,              setLoading]              = useState(true);
+  const [error,                setError]                = useState('');
+  const [submitting,           setSubmitting]           = useState(false);
+  const [result,               setResult]               = useState(null);
 
   const startTimeRef = useRef(null);
 
@@ -39,19 +163,16 @@ export default function TakeQuiz() {
   const handleSubmit = async () => {
     setSubmitting(true);
     setError('');
-
     const timeTakenSeconds = Math.round((Date.now() - startTimeRef.current) / 1000);
-
     const formattedAnswers = questions.map((q) => ({
       question: q._id,
-      selectedIndex: answers[q._id] ?? -1
+      selectedIndex: answers[q._id] ?? -1,
     }));
-
     try {
       const data = await api.post('/attempts/submit', {
         quizId: id,
         answers: formattedAnswers,
-        timeTakenSeconds
+        timeTakenSeconds,
       });
       setResult(data);
     } catch (err) {
@@ -62,131 +183,170 @@ export default function TakeQuiz() {
   };
 
   const confirmAndSubmit = () => {
-    const allAnswered = questions.every((q) => answers[q._id] !== undefined);
-    if (!allAnswered) {
-      const unansweredCount = questions.filter((q) => answers[q._id] === undefined).length;
+    const unanswered = questions.filter((q) => answers[q._id] === undefined).length;
+    if (unanswered > 0) {
       const proceed = window.confirm(
-        `You have ${unansweredCount} unanswered question${unansweredCount > 1 ? 's' : ''}. Submit anyway?`
+        `You have ${unanswered} unanswered question${unanswered > 1 ? 's' : ''}. Submit anyway?`
       );
       if (!proceed) return;
     }
     handleSubmit();
   };
 
-  if (loading) return <p className="p-6 text-slate-500">Loading quiz...</p>;
-  if (error) return <p className="p-6 text-danger">Error: {error}</p>;
+  // ── Render states ──
+  if (loading) return <QuizSkeleton />;
 
-  if (result) {
-    return (
-      <div className="p-6 max-w-xl mx-auto">
-        <div className="bg-white rounded-lg border border-slate-200 p-6 text-center">
-          <div className="w-14 h-14 rounded-full bg-success-light text-success flex items-center justify-center text-2xl mx-auto mb-4">
-            ✓
-          </div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">Quiz Complete!</h1>
-          <p className="text-slate-500 mb-6">
-            {result.correctCount} / {result.totalQuestions} correct
-          </p>
-
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-slate-50 rounded-md p-3">
-              <p className="text-xs text-slate-400">XP Earned</p>
-              <p className="text-lg font-bold text-success">+{result.attempt.xpAwarded}</p>
-            </div>
-            <div className="bg-slate-50 rounded-md p-3">
-              <p className="text-xs text-slate-400">Level</p>
-              <p className="text-lg font-bold text-brand">{result.levelInfo.level}</p>
-            </div>
-            <div className="bg-slate-50 rounded-md p-3">
-              <p className="text-xs text-slate-400">Progress</p>
-              <p className="text-sm font-medium text-slate-700 mt-1.5">
-                {result.progress.status}
-              </p>
-            </div>
-          </div>
-        </div>
+  if (error && !result) return (
+    <div className="page-container max-w-2xl mx-auto">
+      <div className="card border-[var(--color-danger)] bg-[var(--color-danger-light)] p-6 text-center">
+        <AlertCircle size={24} className="text-[var(--color-danger)] mx-auto mb-2" />
+        <p className="text-[var(--color-danger)] font-semibold">{error}</p>
+        <button onClick={() => navigate(-1)} className="btn btn-secondary btn-sm mt-3">Go Back</button>
       </div>
-    );
-  }
+    </div>
+  );
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === questions.length - 1;
-  const isFirstQuestion = currentQuestionIndex === 0;
-  const currentAnswered = answers[currentQuestion._id] !== undefined;
+  if (result) return <ResultScreen result={result} navigate={navigate} />;
+
+  const currentQuestion  = questions[currentQuestionIndex];
+  const isLast           = currentQuestionIndex === questions.length - 1;
+  const isFirst          = currentQuestionIndex === 0;
+  const answeredCount    = Object.keys(answers).length;
+  const progressPct      = Math.round(((currentQuestionIndex + 1) / questions.length) * 100);
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-slate-800">{quiz.topic?.title}</h1>
-        <div className="flex items-center gap-3 mt-2">
-          <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-brand rounded-full transition-all duration-300"
-              style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-            />
-          </div>
-          <span className="text-slate-400 text-sm whitespace-nowrap">
-            {currentQuestionIndex + 1} / {questions.length}
-          </span>
+    <div className="page-container max-w-2xl mx-auto space-y-5 animate-fade-in">
+
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors group"
+        >
+          <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+          Exit
+        </button>
+        <div className="flex-1">
+          <p className="text-sm font-bold text-[var(--color-text)] truncate">
+            {quiz?.topic?.title ?? 'Quiz'}
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-text-muted)]">
+          <BookOpen size={14} />
+          {answeredCount}/{questions.length} answered
         </div>
       </div>
 
-      <div key={currentQuestion._id} className="bg-white rounded-lg border border-slate-200 p-5">
-        <p className="font-medium text-slate-800 mb-4">{currentQuestion.questionText}</p>
-        <div className="space-y-2">
+      {/* Progress bar */}
+      <div className="space-y-1.5">
+        <div className="flex justify-between text-xs text-[var(--color-text-muted)]">
+          <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
+          <span className="font-bold text-[var(--color-primary)]">{progressPct}%</span>
+        </div>
+        <div className="xp-bar">
+          <div
+            className="xp-bar-fill transition-all duration-500"
+            style={{ '--xp-pct': `${progressPct}%`, width: `${progressPct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Question card */}
+      <div key={currentQuestion._id} className="card animate-scale-in">
+        <p className="font-bold text-[var(--color-text)] text-lg leading-relaxed mb-5">
+          {currentQuestion.questionText}
+        </p>
+        <div className="space-y-2.5">
           {currentQuestion.options.map((option, optIndex) => {
             const isSelected = answers[currentQuestion._id] === optIndex;
             return (
               <label
                 key={optIndex}
-                className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
-                  isSelected
-                    ? 'border-brand bg-brand-light'
-                    : 'border-slate-200 hover:bg-slate-50'
-                }`}
+                className={`quiz-option cursor-pointer select-none ${isSelected ? 'selected' : ''}`}
               >
                 <input
                   type="radio"
                   name={currentQuestion._id}
                   checked={isSelected}
                   onChange={() => selectAnswer(currentQuestion._id, optIndex)}
-                  className="accent-brand"
+                  className="sr-only"
                 />
-                <span className={isSelected ? 'text-slate-800' : 'text-slate-600'}>
-                  {option}
-                </span>
+                {/* Option letter */}
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-all ${
+                    isSelected
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : 'bg-[var(--color-bg)] text-[var(--color-text-muted)]'
+                  }`}
+                >
+                  {String.fromCharCode(65 + optIndex)}
+                </div>
+                <span className="flex-1 text-sm text-[var(--color-text)]">{option}</span>
+                {isSelected && <CheckCircle2 size={16} className="text-[var(--color-primary)] shrink-0" />}
               </label>
             );
           })}
         </div>
       </div>
 
-      <div className="flex justify-between">
+      {/* Navigation */}
+      <div className="flex items-center gap-3">
         <button
           onClick={() => setCurrentQuestionIndex((i) => i - 1)}
-          disabled={isFirstQuestion}
-          className="px-4 py-2 text-slate-600 rounded-md border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+          disabled={isFirst}
+          className="btn btn-secondary btn-sm"
         >
+          <ChevronLeft size={16} />
           Previous
         </button>
 
-        {isLastQuestion ? (
+        {/* Dot indicators */}
+        <div className="flex-1 flex items-center justify-center gap-1.5 flex-wrap">
+          {questions.map((q, i) => (
+            <button
+              key={q._id}
+              onClick={() => setCurrentQuestionIndex(i)}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
+                i === currentQuestionIndex
+                  ? 'bg-[var(--color-primary)] scale-125'
+                  : answers[q._id] !== undefined
+                  ? 'bg-[var(--color-success)]'
+                  : 'bg-[var(--color-border)]'
+              }`}
+              title={`Question ${i + 1}`}
+            />
+          ))}
+        </div>
+
+        {isLast ? (
           <button
             onClick={confirmAndSubmit}
             disabled={submitting}
-            className="px-5 py-2 bg-success text-white rounded-md font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+            className="btn btn-success btn-sm"
           >
-            {submitting ? 'Submitting...' : 'Submit Quiz'}
+            {submitting ? (
+              <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Submitting...</>
+            ) : (
+              <>Submit Quiz <Zap size={14} /></>
+            )}
           </button>
         ) : (
           <button
             onClick={() => setCurrentQuestionIndex((i) => i + 1)}
-            className="px-5 py-2 bg-brand text-white rounded-md font-medium hover:opacity-90 transition-opacity"
+            className="btn btn-primary btn-sm"
           >
-            Next
+            Next <ChevronRight size={16} />
           </button>
         )}
       </div>
+
+      {/* Submit error */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--color-danger-light)] text-[var(--color-danger)] text-sm">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
     </div>
   );
 }

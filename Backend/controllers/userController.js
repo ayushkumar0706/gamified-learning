@@ -50,4 +50,49 @@ const requestSeniorPromotion = async (req, res) => {
 };
 
 
-module.exports = { updateUserRole, requestSeniorPromotion };
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate('college', 'name code city state logo')
+      .select('-password');
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const allowedFields = [
+      'firstName', 'lastName', 'bio', 'careerGoal', 'currentPreparationLevel',
+      'branch', 'year', 'github', 'linkedin', 'leetcode', 'codeforces',
+      'profileVisibility', 'photo'
+    ];
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        user[field] = req.body[field];
+      }
+    });
+
+    await user.save();
+
+    const updatedUser = await User.findById(user._id)
+      .populate('college', 'name code city state logo')
+      .select('-password');
+
+    res.status(200).json({ message: "Profile updated successfully", user: updatedUser });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { updateUserRole, requestSeniorPromotion, getProfile, updateProfile };
