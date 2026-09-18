@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
-  Award, Trophy, Zap, Flame, Lock, CheckCircle2, Star,
-  Shield, Target, Sparkles, Filter, ChevronRight
-} from 'lucide-react';
+    Zap,   CheckCircle2 } from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Achievements' },
@@ -24,8 +22,7 @@ const ALL_ACHIEVEMENTS = [
     icon: '🚀',
     description: 'Complete your very first topic module on LearnUp.',
     checkUnlocked: (data) => (data?.completedTopics ?? 0) >= 1,
-    getProgress: (data) => ({ current: Math.min(1, data?.completedTopics ?? 0), max: 1 }),
-  },
+    getProgress: (data) => ({ current: Math.min(1, data?.completedTopics ?? 0), max: 1 }) },
   {
     id: 'dsa-initiate',
     title: 'DSA Initiate',
@@ -35,8 +32,7 @@ const ALL_ACHIEVEMENTS = [
     icon: '🧠',
     description: 'Complete 3 learning topics across any level.',
     checkUnlocked: (data) => (data?.completedTopics ?? 0) >= 3,
-    getProgress: (data) => ({ current: Math.min(3, data?.completedTopics ?? 0), max: 3 }),
-  },
+    getProgress: (data) => ({ current: Math.min(3, data?.completedTopics ?? 0), max: 3 }) },
   {
     id: 'dsa-warrior',
     title: 'DSA Warrior',
@@ -46,8 +42,7 @@ const ALL_ACHIEVEMENTS = [
     icon: '⚔️',
     description: 'Complete 6 core topics and build solid foundations.',
     checkUnlocked: (data) => (data?.completedTopics ?? 0) >= 6,
-    getProgress: (data) => ({ current: Math.min(6, data?.completedTopics ?? 0), max: 6 }),
-  },
+    getProgress: (data) => ({ current: Math.min(6, data?.completedTopics ?? 0), max: 6 }) },
   {
     id: 'streak-starter',
     title: 'Spark of Habit',
@@ -57,8 +52,7 @@ const ALL_ACHIEVEMENTS = [
     icon: '⚡',
     description: 'Maintain an active daily learning streak for 2 days.',
     checkUnlocked: (data) => (data?.streak ?? 0) >= 2 || (data?.maxStreak ?? 0) >= 2,
-    getProgress: (data) => ({ current: Math.min(2, Math.max(data?.streak ?? 0, data?.maxStreak ?? 0)), max: 2 }),
-  },
+    getProgress: (data) => ({ current: Math.min(2, Math.max(data?.streak ?? 0, data?.maxStreak ?? 0)), max: 2 }) },
   {
     id: 'streak-fire',
     title: 'On Fire',
@@ -68,8 +62,7 @@ const ALL_ACHIEVEMENTS = [
     icon: '🔥',
     description: 'Maintain a 5-day continuous learning streak.',
     checkUnlocked: (data) => (data?.streak ?? 0) >= 5 || (data?.maxStreak ?? 0) >= 5,
-    getProgress: (data) => ({ current: Math.min(5, Math.max(data?.streak ?? 0, data?.maxStreak ?? 0)), max: 5 }),
-  },
+    getProgress: (data) => ({ current: Math.min(5, Math.max(data?.streak ?? 0, data?.maxStreak ?? 0)), max: 5 }) },
   {
     id: 'streak-legend',
     title: 'Habit Champion',
@@ -79,8 +72,7 @@ const ALL_ACHIEVEMENTS = [
     icon: '👑',
     description: 'Reach an unbelievable 14-day study streak!',
     checkUnlocked: (data) => (data?.streak ?? 0) >= 14 || (data?.maxStreak ?? 0) >= 14,
-    getProgress: (data) => ({ current: Math.min(14, Math.max(data?.streak ?? 0, data?.maxStreak ?? 0)), max: 14 }),
-  },
+    getProgress: (data) => ({ current: Math.min(14, Math.max(data?.streak ?? 0, data?.maxStreak ?? 0)), max: 14 }) },
   {
     id: 'quiz-ace',
     title: 'Quiz Ace',
@@ -93,8 +85,7 @@ const ALL_ACHIEVEMENTS = [
     getProgress: (data) => {
       const topScore = Math.max(0, ...(data?.recentAttempts?.map((a) => a.scorePercentage) || [0]));
       return { current: Math.min(80, topScore), max: 80, unit: '%' };
-    },
-  },
+    } },
   {
     id: 'perfect-score',
     title: 'Flawless Victory',
@@ -107,8 +98,7 @@ const ALL_ACHIEVEMENTS = [
     getProgress: (data) => {
       const hasPerfect = data?.recentAttempts?.some((a) => a.scorePercentage === 100);
       return { current: hasPerfect ? 1 : 0, max: 1 };
-    },
-  },
+    } },
   {
     id: 'century-xp',
     title: 'Century Pioneer',
@@ -118,8 +108,7 @@ const ALL_ACHIEVEMENTS = [
     icon: '💎',
     description: 'Accumulate 200 total XP from quizzes and milestones.',
     checkUnlocked: (data) => (data?.xp ?? 0) >= 200,
-    getProgress: (data) => ({ current: Math.min(200, data?.xp ?? 0), max: 200, unit: 'XP' }),
-  },
+    getProgress: (data) => ({ current: Math.min(200, data?.xp ?? 0), max: 200, unit: 'XP' }) },
   {
     id: 'grand-master',
     title: 'Grand Master',
@@ -129,8 +118,7 @@ const ALL_ACHIEVEMENTS = [
     icon: '🏆',
     description: 'Amass 1,000+ total XP across your campus journey.',
     checkUnlocked: (data) => (data?.xp ?? 0) >= 1000,
-    getProgress: (data) => ({ current: Math.min(1000, data?.xp ?? 0), max: 1000, unit: 'XP' }),
-  },
+    getProgress: (data) => ({ current: Math.min(1000, data?.xp ?? 0), max: 1000, unit: 'XP' }) },
   {
     id: 'senior-mentor',
     title: 'Campus Guide',
@@ -142,9 +130,7 @@ const ALL_ACHIEVEMENTS = [
     checkUnlocked: (data) => data?.userRole === 'senior' || data?.userRole === 'admin',
     getProgress: (data) => ({
       current: data?.userRole === 'senior' || data?.userRole === 'admin' ? 1 : 0,
-      max: 1,
-    }),
-  },
+      max: 1 }) },
   {
     id: 'placement-ready',
     title: 'Placement Ready',
@@ -154,16 +140,14 @@ const ALL_ACHIEVEMENTS = [
     icon: '💼',
     description: 'Complete 10 topics and reach Level 5 on the platform.',
     checkUnlocked: (data) => (data?.completedTopics ?? 0) >= 10 && (data?.level ?? 1) >= 5,
-    getProgress: (data) => ({ current: Math.min(10, data?.completedTopics ?? 0), max: 10, unit: 'topics' }),
-  },
+    getProgress: (data) => ({ current: Math.min(10, data?.completedTopics ?? 0), max: 10, unit: 'topics' }) },
 ];
 
 const RARITY_STYLES = {
   Common: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700',
   Rare: 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
   Epic: 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-  Legendary: 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700',
-};
+  Legendary: 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700' };
 
 export default function Achievements() {
   const { user } = useAuth();
@@ -193,8 +177,7 @@ export default function Achievements() {
     maxStreak: dashboardData?.maxStreak ?? user?.maxStreak ?? 0,
     completedTopics: dashboardData?.progressSummary?.completedTopics ?? 0,
     recentAttempts: dashboardData?.recentAttempts || [],
-    userRole: user?.role || 'student',
-  };
+    userRole: user?.role || 'student' };
 
   const achievementsWithStatus = ALL_ACHIEVEMENTS.map((ach) => {
     const isUnlocked = ach.checkUnlocked(statsContext);
@@ -204,8 +187,7 @@ export default function Achievements() {
       ...ach,
       isUnlocked,
       progress,
-      pct,
-    };
+      pct };
   });
 
   const filtered = achievementsWithStatus.filter(

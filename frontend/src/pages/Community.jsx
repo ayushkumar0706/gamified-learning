@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 import {
-  MessageSquare, ThumbsUp, MessageCircle, Share2, Plus, Search,
-  Flame, Sparkles, Filter, CheckCircle2, Tag, Send, X, Shield,
-  Award, CornerDownRight, Bookmark
-} from 'lucide-react';
+  MessageSquare, ThumbsUp, MessageCircle,  Plus, Search,
+  Flame, Sparkles,  CheckCircle2,  Send, X, Shield,
+   CornerDownRight } from 'lucide-react';
 
 const CHANNELS = [
   { id: 'all', name: 'All Discussions', icon: '🌐' },
@@ -15,95 +15,16 @@ const CHANNELS = [
   { id: 'referrals', name: 'Referral Requests', icon: '🤝' },
 ];
 
-const INITIAL_POSTS = [
-  {
-    id: 'post-1',
-    author: {
-      name: 'Rohan Verma',
-      role: 'senior',
-      company: 'Amazon SDE 1',
-      branch: 'Computer Science',
-      year: 'Class of 2024',
-    },
-    channel: 'interview-prep',
-    title: 'Top 10 Binary Tree patterns asked in Amazon & Microsoft OA this month',
-    content:
-      'Hey everyone! A lot of juniors reached out about the online assessment pattern changes. Here are the 4 most frequent patterns: 1) Lowest Common Ancestor variations, 2) Tree serialization/deserialization, 3) Path sum with negative weights, and 4) View of Binary tree (Vertical/Top). Make sure to practice them on LeetCode before your drive next week!',
-    tags: ['Amazon', 'Microsoft', 'BinaryTrees', 'DSA'],
-    upvotes: 48,
-    upvoted: false,
-    createdAt: '2 hours ago',
-    replies: [
-      {
-        id: 'rep-1',
-        author: { name: 'Aarav Sharma', role: 'senior', company: 'Google SDE' },
-        content: 'Great breakdown Rohan! Also add Morris traversal if time permits, Google interviewers love asking for O(1) auxiliary space.',
-        createdAt: '1 hour ago',
-      },
-      {
-        id: 'rep-2',
-        author: { name: 'Devendra Kumar', role: 'student' },
-        content: 'Thank you bhaiya! Practicing these right now on LearnUp.',
-        createdAt: '30 mins ago',
-      },
-    ],
-  },
-  {
-    id: 'post-2',
-    author: {
-      name: 'Sneha Kulkarni',
-      role: 'senior',
-      company: 'Atlassian',
-      branch: 'ECE',
-      year: 'Class of 2023',
-    },
-    channel: 'referrals',
-    title: 'Atlassian Early Careers 2025/2026 Batch — Opening for 20+ Grad SDEs',
-    content:
-      'Atlassian is hiring freshers for the Bangalore office! If you have completed at least Level 3 on LearnUp or have strong DSA + 1 solid full-stack project, drop your resume in my DMs or apply through the Senior Directory tab.',
-    tags: ['Atlassian', 'OffCampus', 'FullTime', 'Referral'],
-    upvotes: 65,
-    upvoted: true,
-    createdAt: '5 hours ago',
-    replies: [
-      {
-        id: 'rep-3',
-        author: { name: 'Priya Patel', role: 'senior', company: 'Microsoft' },
-        content: 'Super opportunity! Atlassian engineering culture is phenomenal.',
-        createdAt: '3 hours ago',
-      },
-    ],
-  },
-  {
-    id: 'post-3',
-    author: {
-      name: 'Aditya Mehta',
-      role: 'student',
-      branch: 'IT',
-      year: 'Year 3',
-    },
-    channel: 'project-showcase',
-    title: 'Built an AI Mock Interviewer with WebRTC & Whisper — feedback appreciated!',
-    content:
-      'Hey peers! As part of my placement prep, I built a real-time voice interview bot that evaluates technical answers against LeetCode editorial solutions. Live demo and GitHub link in the comments. Would love some code reviews from seniors!',
-    tags: ['WebRTC', 'React', 'AI', 'OpenSource'],
-    upvotes: 32,
-    upvoted: false,
-    createdAt: '1 day ago',
-    replies: [
-      {
-        id: 'rep-4',
-        author: { name: 'Aarav Sharma', role: 'senior', company: 'Google SDE' },
-        content: 'Loved the latency optimization on the audio stream! Put this on top of your resume.',
-        createdAt: '18 hours ago',
-      },
-    ],
-  },
-];
+function formatTime(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
 
 export default function Community() {
   const { user } = useAuth();
-  const [posts, setPosts] = useState(INITIAL_POSTS);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('trending'); // 'trending' | 'newest'
@@ -119,22 +40,42 @@ export default function Community() {
   const [activeReplyPostId, setActiveReplyPostId] = useState(null);
   const [replyText, setReplyText] = useState('');
 
-  const handleUpvote = (postId) => {
-    setPosts(
-      posts.map((p) => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            upvotes: p.upvoted ? p.upvotes - 1 : p.upvotes + 1,
-            upvoted: !p.upvoted,
-          };
-        }
-        return p;
-      })
-    );
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/community/posts');
+      if (res.success) {
+        setPosts(res.posts);
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCreatePost = (e) => {
+  useEffect(() => {
+    fetchPosts();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+  }, []);
+
+  const handleUpvote = async (postId) => {
+    try {
+      const res = await api.post(`/community/posts/${postId}/upvote`);
+      if (res.success) {
+        setPosts(posts.map((p) => {
+          if (p.id === postId) {
+            return { ...p, upvotes: res.upvotes, upvoted: res.upvoted };
+          }
+          return p;
+        }));
+      }
+    } catch (error) {
+      console.error('Error upvoting post:', error);
+    }
+  };
+
+  const handleCreatePost = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim()) return;
 
@@ -143,59 +84,58 @@ export default function Community() {
       .map((t) => t.trim().replace(/^#/, ''))
       .filter(Boolean);
 
-    const newPostObj = {
-      id: `post-${Date.now()}`,
-      author: {
-        name: `${user?.firstName || 'Student'} ${user?.lastName || ''}`.trim(),
-        role: user?.role || 'student',
-        company: user?.role === 'senior' ? 'Campus Senior Mentor' : undefined,
-        branch: user?.branch || 'Computer Science',
-        year: user?.year ? `Year ${user.year}` : 'Student',
-      },
-      channel: newChannel,
-      title: newTitle,
-      content: newContent,
-      tags: tagsArray.length > 0 ? tagsArray : ['CollegePrep'],
-      upvotes: 1,
-      upvoted: true,
-      createdAt: 'Just now',
-      replies: [],
-    };
+    try {
+      const res = await api.post('/community/posts', {
+        channel: newChannel,
+        title: newTitle,
+        content: newContent,
+        tags: tagsArray
+      });
 
-    setPosts([newPostObj, ...posts]);
-    setIsCreatingPost(false);
-    setNewTitle('');
-    setNewContent('');
-    setNewTags('');
+      if (res.success) {
+        // Refresh posts to get the newly formatted post
+        fetchPosts();
+        setIsCreatingPost(false);
+        setNewTitle('');
+        setNewContent('');
+        setNewTags('');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+    }
   };
 
-  const handleAddReply = (postId) => {
+  const handleAddReply = async (postId) => {
     if (!replyText.trim()) return;
 
-    const newReply = {
-      id: `rep-${Date.now()}`,
-      author: {
-        name: `${user?.firstName || 'Student'} ${user?.lastName || ''}`.trim(),
-        role: user?.role || 'student',
-        company: user?.role === 'senior' ? 'Campus Senior' : undefined,
-      },
-      content: replyText.trim(),
-      createdAt: 'Just now',
-    };
+    try {
+      const res = await api.post(`/community/posts/${postId}/reply`, {
+        content: replyText.trim()
+      });
 
-    setPosts(
-      posts.map((p) => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            replies: [...p.replies, newReply],
-          };
-        }
-        return p;
-      })
-    );
-
-    setReplyText('');
+      if (res.success) {
+        setPosts(posts.map((p) => {
+          if (p.id === postId) {
+            // Re-format replies to match frontend expectation
+            const formattedReplies = res.replies.map(rep => ({
+              id: rep._id,
+              author: {
+                name: `${rep.author.firstName} ${rep.author.lastName || ''}`.trim(),
+                role: rep.author.role,
+                company: rep.author.seniorProfile?.company
+              },
+              content: rep.content,
+              createdAt: rep.createdAt
+            }));
+            return { ...p, replies: formattedReplies };
+          }
+          return p;
+        }));
+        setReplyText('');
+      }
+    } catch (error) {
+      console.error('Error adding reply:', error);
+    }
   };
 
   const filteredPosts = posts
@@ -310,7 +250,13 @@ export default function Community() {
 
         {/* Discussions Feed */}
         <div className="md:col-span-3 space-y-4">
-          {filteredPosts.length === 0 ? (
+          {loading ? (
+             <div className="space-y-4">
+               {[1, 2, 3].map((i) => (
+                 <div key={i} className="card p-5 border border-[var(--color-border)] skeleton h-48 rounded-2xl"></div>
+               ))}
+             </div>
+          ) : filteredPosts.length === 0 ? (
             <div className="card text-center py-12 px-4 border border-[var(--color-border)]">
               <p className="text-3xl mb-2">💬</p>
               <h3 className="font-bold text-sm text-[var(--color-text)]">No posts in this channel yet</h3>
@@ -347,7 +293,7 @@ export default function Community() {
                         )}
                       </div>
                       <p className="text-[11px] text-[var(--color-text-subtle)]">
-                        {post.author.branch} • {post.createdAt}
+                        {post.author.branch} • {formatTime(post.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -428,7 +374,7 @@ export default function Community() {
                               </span>
                             )}
                           </div>
-                          <span className="text-[10px] text-[var(--color-text-subtle)]">{rep.createdAt}</span>
+                          <span className="text-[10px] text-[var(--color-text-subtle)]">{formatTime(rep.createdAt)}</span>
                         </div>
                         <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">{rep.content}</p>
                       </div>

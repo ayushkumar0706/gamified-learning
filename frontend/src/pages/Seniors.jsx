@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
-  GraduationCap, Building2, Search, Filter, Calendar, Clock,
-  Star, CheckCircle2, MessageSquare, Send, Sparkles, ExternalLink,
-  ChevronRight, X, AlertCircle, Award, BookOpen, UserCheck
-} from 'lucide-react';
+  GraduationCap, Building2, Search,  Calendar, Clock,
+  Star, CheckCircle2,    
+  ChevronRight, X, AlertCircle, Award } from 'lucide-react';
 
 const COMPANIES = ['All', 'Google', 'Microsoft', 'Amazon', 'Atlassian', 'Uber', 'Flipkart', 'Startups'];
 
@@ -24,8 +23,7 @@ const MOCK_SENIORS = [
     responseTime: '~2 hrs',
     skills: ['DSA & LeetCode 400+', 'System Design', 'Resume Review', 'Google Interview Prep'],
     bio: 'Placed at Google through off-campus drive. Passionate about helping juniors crack algorithmic rounds and craft high-impact resumes.',
-    availableDays: ['Saturday', 'Sunday', 'Wednesday Evening'],
-  },
+    availableDays: ['Saturday', 'Sunday', 'Wednesday Evening'] },
   {
     id: 'sen-2',
     name: 'Priya Patel',
@@ -40,8 +38,7 @@ const MOCK_SENIORS = [
     responseTime: '< 1 hr',
     skills: ['React & Next.js', 'Frontend System Design', 'Portfolio Reviews', 'Referrals'],
     bio: '2+ years at Microsoft. Mentored 50+ students into product companies. Happy to review portfolios, projects, and conduct mock interviews.',
-    availableDays: ['Friday Evening', 'Sunday Afternoon'],
-  },
+    availableDays: ['Friday Evening', 'Sunday Afternoon'] },
   {
     id: 'sen-3',
     name: 'Rohan Verma',
@@ -56,8 +53,7 @@ const MOCK_SENIORS = [
     responseTime: '~3 hrs',
     skills: ['Java & Spring Boot', 'AWS & Cloud Architecture', 'Low-Level Design', 'Amazon LP Prep'],
     bio: 'Cracked Amazon SDE-1 on-campus. Specialized in Amazon Leadership Principles and object-oriented low-level design.',
-    availableDays: ['Weekdays After 7 PM', 'Weekends'],
-  },
+    availableDays: ['Weekdays After 7 PM', 'Weekends'] },
   {
     id: 'sen-4',
     name: 'Sneha Kulkarni',
@@ -72,8 +68,7 @@ const MOCK_SENIORS = [
     responseTime: '< 2 hrs',
     skills: ['Distributed Systems', 'Go & Docker', 'Non-CS to Tech Transition', 'Mock Interviews'],
     bio: 'Non-CS branch to Atlassian! If you are from ECE/EE and worried about coding rounds, let us build your custom roadmap together.',
-    availableDays: ['Saturday', 'Sunday Morning'],
-  },
+    availableDays: ['Saturday', 'Sunday Morning'] },
   {
     id: 'sen-5',
     name: 'Aditya Mehta',
@@ -88,8 +83,7 @@ const MOCK_SENIORS = [
     responseTime: '~4 hrs',
     skills: ['Full Stack Dev', 'High Scale Microservices', 'Internship Strategies', 'Referrals'],
     bio: 'Joined Uber after a 6-month intern conversion. Can guide you on converting intern offers into full-time PPOs.',
-    availableDays: ['Sunday', 'Tuesday Evening'],
-  },
+    availableDays: ['Sunday', 'Tuesday Evening'] },
   {
     id: 'sen-6',
     name: 'Ananya Roy',
@@ -104,8 +98,7 @@ const MOCK_SENIORS = [
     responseTime: '< 1 hr',
     skills: ['Fast-Paced Startups', 'AI Engineering & LLMs', 'Hackathons Winner', 'Cold Emailing'],
     bio: 'Won 6 national hackathons and now building generative AI tooling. I guide students targeting high-equity high-growth startups.',
-    availableDays: ['Flexible / On-Demand'],
-  },
+    availableDays: ['Flexible / On-Demand'] },
 ];
 
 const SESSION_TYPES = [
@@ -142,8 +135,7 @@ export default function Seniors() {
     } catch (err) {
       setPromoMessage({
         type: 'info',
-        text: err.message || 'Senior promotion requires 365 days on platform & 10 completed topics.',
-      });
+        text: err.message || 'Senior promotion requires 365 days on platform & 10 completed topics.' });
     } finally {
       setPromoting(false);
     }
@@ -162,8 +154,7 @@ export default function Seniors() {
       company: selectedSenior.company,
       type: SESSION_TYPES.find((s) => s.id === selectedSessionType)?.title,
       date: bookingDate,
-      note: bookingNote,
-    };
+      note: bookingNote };
 
     setBookedSessions([sessionObj, ...bookedSessions]);
     setBookingStatus('success');
