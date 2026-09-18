@@ -143,6 +143,15 @@ const userSchema = new Schema({
     default: false
   },
 
+  // ── Senior Profile ─────────────────────────────────
+  seniorProfile: {
+    jobTitle: { type: String, default: null },
+    company: { type: String, default: null },
+    skills: [{ type: String }],
+    availableDays: [{ type: String }],
+    responseTime: { type: String, default: 'Within 24 hours' }
+  },
+
   // ── Legacy / backward compat ───────────────────────
   age: {
     type: Number,

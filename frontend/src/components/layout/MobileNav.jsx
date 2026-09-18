@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Map, BookOpen, Trophy, Users, User
+  LayoutDashboard, Map, BookOpen, Trophy,  User
 } from 'lucide-react';
 
 const MOBILE_NAV = [

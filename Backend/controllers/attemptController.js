@@ -3,6 +3,7 @@ const Attempt = require('../Models/attempt');
 const Quiz = require('../Models/quiz');
 const User = require('../Models/user');
 const Progress = require('../Models/progress');
+const XPLog = require('../Models/xpLog');
 const { calculateLevel } = require('../utils/xpToLevel');
 const { getISTDayDifference } = require('../utils/streak');
 
@@ -65,6 +66,15 @@ const submitAttempt = async (req, res) => {
     // Update XP and level together
     const user = await User.findById(req.user._id);
     user.xp += xpAwarded;
+
+    if (xpAwarded > 0 && user.college) {
+      await XPLog.create({
+        user: user._id,
+        college: user.college,
+        amount: xpAwarded,
+        source: 'quiz'
+      });
+    }
 
     const levelInfo = calculateLevel(user.xp);
     user.level = levelInfo.level;

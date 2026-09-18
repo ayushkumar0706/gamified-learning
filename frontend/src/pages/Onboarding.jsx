@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
   Zap, Search, ChevronRight, ChevronLeft, Check, AlertCircle,
-  Building2, GraduationCap, BookOpen, Target, User, Mail, Lock,
+  Building2,    User, Mail, Lock,
   Eye, EyeOff, ArrowRight, Loader2
 } from 'lucide-react';
 
@@ -363,8 +363,7 @@ export default function Onboarding() {
     firstName: '',
     lastName: '',
     email: '',
-    password: '',
-  });
+    password: '' });
 
   const update = (partial) => setFormData((prev) => ({ ...prev, ...partial }));
 
@@ -390,8 +389,7 @@ export default function Onboarding() {
         year: formData.year || undefined,
         branch: formData.branch || undefined,
         careerGoal: formData.careerGoal || undefined,
-        currentPreparationLevel: formData.currentPreparationLevel || undefined,
-      };
+        currentPreparationLevel: formData.currentPreparationLevel || undefined };
       await api.post('/auth/register', body);
       await login(formData.email, formData.password);
       navigate('/dashboard');

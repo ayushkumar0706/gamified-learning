@@ -3,8 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Link } from 'react-router-dom';
 import {
-  Flame, Zap, Trophy, BookOpen, CheckCircle2, Lock,
-  ArrowRight, TrendingUp, Clock, Star, ChevronRight, Rocket
+    Zap,  
+    Target, CheckCircle2,
+        Trophy,
+  BookOpen, ArrowRight, Star, ChevronRight, Rocket
 } from 'lucide-react';
 
 // ── Skeleton loader ──────────────────────────────────────────────────────────
@@ -70,9 +72,10 @@ const LEVEL_META = [
   { icon: '🎓', name: 'Placement',      color: '#F97316' },
 ];
 
-function JourneyMiniMap({ completedTopics, totalTopics }) {
-  // Simple heuristic: mark first level complete if any topics done
-  const activeIndex = 1; // hardcoded for now, will be dynamic in Journey page
+function JourneyMiniMap({ completedTopics, totalTopics, clearedCount }) {
+  // clearedCount = number of career levels officially cleared
+  // active = the level right after the last cleared one
+  const activeIndex = Math.min(clearedCount, LEVEL_META.length - 1);
 
   return (
     <div className="card">
@@ -95,8 +98,7 @@ function JourneyMiniMap({ completedTopics, totalTopics }) {
                 }`}
                 style={{
                   background: status !== 'locked' ? lvl.color : undefined,
-                  ringColor: status === 'active' ? lvl.color : undefined,
-                }}
+                  ringColor: status === 'active' ? lvl.color : undefined }}
                 title={lvl.name}
               >
                 {status === 'done' ? '✓' : lvl.icon}
@@ -199,15 +201,44 @@ function QuickActions() {
 export default function Dashboard() {
   const { user } = useAuth();
   const [dashboard, setDashboard] = useState(null);
+  const [missions, setMissions] = useState([]);
+  const [claiming, setClaiming] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    api.get('/dashboard/me')
-      .then((data) => setDashboard(data.dashboard))
+  const loadData = () => {
+    setLoading(true);
+    Promise.all([
+      api.get('/dashboard/me'),
+      api.get('/missions')
+    ])
+      .then(([dashData, missData]) => {
+        setDashboard(dashData.dashboard);
+        setMissions(missData);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
+    loadData();
   }, []);
+
+  const handleClaim = async (missionId) => {
+    setClaiming(missionId);
+    try {
+      const res = await api.post(`/missions/${missionId}/claim`);
+      // Update missions state to show claimed
+      setMissions(prev => prev.map(m => m.id === missionId ? { ...m, isClaimed: true } : m));
+      // Optionally update XP dynamically or just refetch dashboard
+      loadData(); 
+    } catch (err) {
+      alert(err.message || 'Failed to claim reward');
+    } finally {
+      setClaiming(null);
+    }
+  };
 
   const getGreeting = () => {
     const h = new Date().getHours();
@@ -228,7 +259,17 @@ export default function Dashboard() {
     </div>
   );
 
-  const { xp, level, xpToNextLevel, streak, maxStreak, progressSummary, recentAttempts } = dashboard;
+  const { 
+    xp = 0, 
+    level = 1, 
+    xpToNextLevel = 100, 
+    streak = 0, 
+    maxStreak = 0, 
+    progressSummary = {}, 
+    recentAttempts = [], 
+    clearedLevelIds = [], 
+    collegeRank = null 
+  } = dashboard || {};
 
   return (
     <div className="page-container space-y-6">
@@ -278,8 +319,8 @@ export default function Dashboard() {
         />
         <StatCard
           icon={<Star size={18} />}
-          value={maxStreak}
-          label="Best Streak"
+          value={collegeRank ? `#${collegeRank}` : `${maxStreak}`}
+          label={collegeRank ? 'College Rank' : 'Best Streak'}
           color="var(--color-secondary)"
           bg="var(--color-secondary-light)"
         />
@@ -292,6 +333,7 @@ export default function Dashboard() {
           <JourneyMiniMap
             completedTopics={progressSummary?.completedTopics ?? 0}
             totalTopics={progressSummary?.totalTopics ?? 0}
+            clearedCount={clearedLevelIds?.length ?? 0}
           />
 
           {/* Progress detail */}
@@ -316,8 +358,60 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent attempts */}
-        <div>
+        {/* Right column: Missions & Recent attempts */}
+        <div className="space-y-4">
+          {/* Daily Missions */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="section-title mb-0 flex items-center gap-1.5">
+                <Target size={16} className="text-[var(--color-primary)]" />
+                Today's Missions
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {(missions || []).map((mission) => {
+                const pct = Math.min(100, Math.round(((mission.currentProgress || 0) / (mission.target || 1)) * 100));
+                
+                return (
+                  <div key={mission.id} className="p-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)]">
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <p className="font-bold text-sm text-[var(--color-text)] flex items-center gap-1.5">
+                          {mission.title}
+                          {mission.isClaimed && <CheckCircle2 size={14} className="text-[var(--color-success)]" />}
+                        </p>
+                        <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{mission.description}</p>
+                      </div>
+                      <span className="badge badge-primary text-[10px] py-0 font-bold text-[var(--color-xp-dark)] bg-[var(--color-xp-light)] border-[var(--color-xp)]/20">+{mission.reward} XP</span>
+                    </div>
+
+                    <div className="mt-2.5 flex items-center gap-3">
+                      <div className="flex-1 xp-bar h-1.5 bg-[var(--color-surface)] overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${mission.isCompleted ? 'bg-[var(--color-success)]' : 'bg-[var(--color-primary)]'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-semibold text-[var(--color-text-subtle)] shrink-0 w-8 text-right">
+                        {mission.currentProgress}/{mission.target}
+                      </span>
+                    </div>
+
+                    {mission.isCompleted && !mission.isClaimed && (
+                      <button
+                        onClick={() => handleClaim(mission.id)}
+                        disabled={claiming === mission.id}
+                        className="btn bg-[var(--color-success)] text-white hover:bg-[var(--color-success-dark)] w-full mt-2.5 py-1.5 text-xs h-auto"
+                      >
+                        {claiming === mission.id ? 'Claiming...' : 'Claim Reward!'}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <RecentActivity attempts={recentAttempts} />
         </div>
       </div>

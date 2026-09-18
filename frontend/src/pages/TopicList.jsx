@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import {
-  BookOpen, CheckCircle2, PlayCircle, Clock, Zap, Search,
-  Filter, ChevronRight, Sparkles, Layers, ArrowLeft
+   CheckCircle2,  Clock, Zap, Search,
+   ChevronRight,   ArrowLeft
 } from 'lucide-react';
 
 export default function TopicList() {

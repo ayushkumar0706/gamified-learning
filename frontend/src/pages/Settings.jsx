@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
-  Settings as SettingsIcon, User, Bell, Shield, Lock, Eye,
-  EyeOff, CheckCircle2, Save, Moon, Sun, Laptop, AlertCircle, LogOut
+  Settings as SettingsIcon, User, Bell,  Lock, 
+   CheckCircle2, Save,    AlertCircle, LogOut
 } from 'lucide-react';
 
 export default function Settings() {
@@ -222,26 +222,22 @@ export default function Settings() {
                 title: 'Daily Streak Reminders',
                 desc: 'Get notified in the evening if your streak has not been continued today.',
                 val: notifyStreak,
-                setVal: setNotifyStreak,
-              },
+                setVal: setNotifyStreak },
               {
                 title: 'Senior Mentorship Updates',
                 desc: 'Alerts when a senior confirms or reschedules a 1-on-1 mentorship session.',
                 val: notifyMentorship,
-                setVal: setNotifyMentorship,
-              },
+                setVal: setNotifyMentorship },
               {
                 title: 'Community Replies & Mentions',
                 desc: 'Notifications when someone answers your doubts or mentions your handle in discussions.',
                 val: notifyCommunity,
-                setVal: setNotifyCommunity,
-              },
+                setVal: setNotifyCommunity },
               {
                 title: 'Campus Placement & Referral Alerts',
                 desc: 'Instant notifications when new high-yield job openings or referrals are posted.',
                 val: notifyJobs,
-                setVal: setNotifyJobs,
-              },
+                setVal: setNotifyJobs },
             ].map((n, i) => (
               <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)]">
                 <div>

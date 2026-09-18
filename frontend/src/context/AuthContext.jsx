@@ -7,20 +7,20 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true) 
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
   const checkAuth = async () => {
     try {
       const data = await api.get('/auth/me')
       setUser(data.user)
-    } catch (err) {
+    } catch {
       setUser(null) 
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    checkAuth()
+  }, [])
 
   const login = async (email, password) => {
     await api.post('/auth/login', { email, password })
@@ -32,13 +32,23 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  const refreshUser = async () => {
+    try {
+      const data = await api.get('/auth/me');
+      setUser(data.user);
+    } catch {
+      setUser(null);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext)
 }

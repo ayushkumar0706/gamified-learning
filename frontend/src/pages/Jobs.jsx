@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
-  Briefcase, Building2, MapPin, DollarSign, Users, ExternalLink,
-  Search, Filter, CheckCircle2, Star, Send, X, Clock,
-  Sparkles, ShieldCheck, ArrowRight
-} from 'lucide-react';
+  Briefcase,  MapPin,  Users, ExternalLink,
+  Search,  CheckCircle2,  Send, X, 
+   ShieldCheck } from 'lucide-react';
 
 const JOB_TYPES = ['All', 'Full-time', 'Internship'];
 const LOCATIONS = ['All', 'Bangalore', 'Hyderabad', 'Pune', 'Gurgaon', 'Remote'];
@@ -25,8 +24,7 @@ const MOCK_JOBS = [
     skills: ['Data Structures', 'Java / Python', 'Distributed Systems Basics', 'REST APIs'],
     description:
       'Join Atlassian as a Graduate SDE working on Jira and Confluence cloud architectures. You will collaborate with global teams building resilient microservices.',
-    applyUrl: 'https://atlassian.com/careers',
-  },
+    applyUrl: 'https://atlassian.com/careers' },
   {
     id: 'job-2',
     title: 'Software Engineering Intern (Summer 2026)',
@@ -42,8 +40,7 @@ const MOCK_JOBS = [
     skills: ['C++ / C#', 'Algorithms', 'OOP Concepts', 'Problem Solving'],
     description:
       'Exciting 2-month summer internship for pre-final year students. High pre-placement offer (PPO) conversion rate based on project delivery.',
-    applyUrl: 'https://careers.microsoft.com',
-  },
+    applyUrl: 'https://careers.microsoft.com' },
   {
     id: 'job-3',
     title: 'SDE 1 — Core Backend',
@@ -59,8 +56,7 @@ const MOCK_JOBS = [
     skills: ['Java', 'Spring Boot', 'AWS Cloud', 'Low-Level Design'],
     description:
       'Looking for passionate engineers with strong problem-solving skills and a solid grasp of AWS infrastructure and concurrency paradigms.',
-    applyUrl: 'https://amazon.jobs',
-  },
+    applyUrl: 'https://amazon.jobs' },
   {
     id: 'job-4',
     title: 'Frontend Engineer (React / Next.js)',
@@ -76,8 +72,7 @@ const MOCK_JOBS = [
     skills: ['TypeScript', 'React.js', 'State Management', 'Web Performance'],
     description:
       'Build consumer-facing rider and driver web experiences serving millions of daily trips globally with sub-second latency.',
-    applyUrl: 'https://uber.com/careers',
-  },
+    applyUrl: 'https://uber.com/careers' },
   {
     id: 'job-5',
     title: 'Full Stack Engineering Intern',
@@ -92,8 +87,7 @@ const MOCK_JOBS = [
     skills: ['Node.js', 'React', 'MongoDB / Postgres', 'Redis'],
     description:
       'Fast-paced quick commerce engineering team. Solve real-time inventory dispatch and delivery partner routing challenges.',
-    applyUrl: 'https://zeptonow.com',
-  },
+    applyUrl: 'https://zeptonow.com' },
   {
     id: 'job-6',
     title: 'Associate Product Engineer',
@@ -108,8 +102,7 @@ const MOCK_JOBS = [
     skills: ['Go / Python', 'SQL Database Tuning', 'Fintech Security', 'Microservices'],
     description:
       'Power the payment rails of India. Opportunity to work on mission-critical transactional pipelines handling billions in monthly volume.',
-    applyUrl: 'https://razorpay.com/jobs',
-  },
+    applyUrl: 'https://razorpay.com/jobs' },
 ];
 
 export default function Jobs() {

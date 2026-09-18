@@ -1,5 +1,7 @@
 const Progress = require('../Models/progress');
 const Attempt = require('../Models/attempt');
+const User = require('../Models/user');
+const UserLevelProgress = require('../Models/userLevelProgress');
 const { calculateLevel } = require('../utils/xpToLevel');
 const { getISTDayDifference } = require('../utils/streak');
 
@@ -42,6 +44,23 @@ const dashboardController = async (req, res) => {
       completedAt: attempt.createdAt
     }));
 
+    // Cleared career levels (for Journey mini-map active index)
+    const clearedLevelDocs = await UserLevelProgress.find({ user: req.user._id })
+      .select('level')
+      .sort({ createdAt: 1 });
+    const clearedLevelIds = clearedLevelDocs.map(d => d.level.toString());
+
+    // College rank (XP-based within same college)
+    let collegeRank = null;
+    if (req.user.college) {
+      const higherCount = await User.countDocuments({
+        college: req.user.college,
+        xp: { $gt: req.user.xp },
+        profileVisibility: { $in: ['public', 'college-only'] }
+      });
+      collegeRank = higherCount + 1;
+    }
+
     res.status(200).json({
       dashboard: {
         xp: req.user.xp,
@@ -50,7 +69,9 @@ const dashboardController = async (req, res) => {
         streak: displayStreak,
         maxStreak: req.user.maxStreak,
         progressSummary,
-        recentAttempts
+        recentAttempts,
+        clearedLevelIds,
+        collegeRank
       }
     });
   } catch (error) {
@@ -60,4 +81,4 @@ const dashboardController = async (req, res) => {
 
 
 
-module.exports = { dashboardController };
+module.exports = { dashboardController };

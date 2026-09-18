@@ -2,10 +2,24 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
-  User, Award, Flame, Zap, Edit3, ExternalLink,
-  GraduationCap, Building2, Target, Calendar, CheckCircle2,
-  Lock, X, Save, Share2, Sparkles, AlertCircle, Code, Trophy
+  Award, Flame, Zap, Edit3, ExternalLink,
+  GraduationCap, Building2, Target, CheckCircle2,
+  X, Save, Share2, Sparkles, AlertCircle, Code, Trophy
 } from 'lucide-react';
+
+// Badge definitions — a compact set used for the Profile badge shelf.
+// Level-clearance badges (from user.badges[] in DB) are merged in dynamically.
+const PROFILE_BADGE_DEFS = [
+  { id: 'first-step',         name: 'First Step',       icon: '🚀', desc: 'Completed your first learning module' },
+  { id: 'quiz-ace',           name: 'Quiz Ace',         icon: '🎯', desc: 'Scored 80%+ on any quiz' },
+  { id: 'streak-fire',        name: 'On Fire',          icon: '🔥', desc: 'Maintained a 5-day learning streak' },
+  { id: 'dsa-warrior',        name: 'DSA Warrior',      icon: '⚔️', desc: 'Completed 6 topics' },
+  { id: 'foundation-builder', name: 'Foundation Builder', icon: '🌱', desc: 'Cleared the Basic level' },
+  { id: 'dsa-warrior-lvl',    name: 'DSA Master',       icon: '🧠', desc: 'Cleared the DSA level' },
+  { id: 'senior-mentor',      name: 'Campus Guide',     icon: '🎓', desc: 'Promoted to Senior Guide' },
+  { id: 'century-xp',         name: 'Century Pioneer',  icon: '💎', desc: 'Earned 200+ XP' },
+  { id: 'grand-master',       name: 'Grand Master',     icon: '🏆', desc: 'Earned 1,000+ XP' },
+];
 
 function GithubIcon({ size = 14, className = '' }) {
   return (
@@ -34,14 +48,7 @@ const PREP_LEVEL_LABELS = {
   'already-applying': '💼 Active Job Seeker',
 };
 
-const DEFAULT_BADGES = [
-  { id: 'first-step', name: 'First Step', icon: '🚀', desc: 'Completed your first learning module', unlocked: true },
-  { id: 'quiz-ace', name: 'Quiz Master', icon: '🎯', desc: 'Scored 80%+ on any quiz', unlocked: true },
-  { id: 'streak-fire', name: 'Firestarter', icon: '🔥', desc: 'Maintained a 3-day learning streak', unlocked: false },
-  { id: 'dsa-warrior', name: 'DSA Knight', icon: '⚔️', desc: 'Finished 5 DSA topics', unlocked: false },
-  { id: 'senior-pro', name: 'Campus Mentor', icon: '🎓', desc: 'Promoted to Senior Guide', unlocked: false },
-  { id: 'century-club', name: 'Century Club', icon: '💯', desc: 'Earned 1,000+ XP', unlocked: false },
-];
+
 
 export default function Profile() {
   const { user: authUser, setUser: setAuthUser } = useAuth();
@@ -72,6 +79,15 @@ export default function Profile() {
   const fetchProfileData = async () => {
     try {
       setLoading(true);
+
+      // 1. Sync badges in background so profile shows latest
+      try {
+        await api.post('/users/badges/sync');
+      } catch {
+        // silently fail
+      }
+
+      // 2. Fetch profile and dashboard
       const [profRes, dashRes] = await Promise.all([
         api.get('/users/profile').catch(() => ({ user: authUser })),
         api.get('/dashboard').catch(() => null),
@@ -103,6 +119,7 @@ export default function Profile() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
     fetchProfileData();
   }, []);
 
@@ -154,17 +171,25 @@ export default function Profile() {
   const maxStreak = dashboardData?.maxStreak ?? u.maxStreak ?? streak;
   const completedTopics = dashboardData?.progressSummary?.completedTopics ?? 0;
 
-  // Evaluate dynamic badges
-  const evaluatedBadges = DEFAULT_BADGES.map((badge) => {
-    let unlocked = false;
-    if (badge.id === 'first-step' && completedTopics >= 1) unlocked = true;
-    if (badge.id === 'quiz-ace' && (dashboardData?.recentAttempts?.some(a => a.scorePercentage >= 80))) unlocked = true;
-    if (badge.id === 'streak-fire' && streak >= 3) unlocked = true;
-    if (badge.id === 'dsa-warrior' && completedTopics >= 5) unlocked = true;
-    if (badge.id === 'senior-pro' && u.role === 'senior') unlocked = true;
-    if (badge.id === 'century-club' && xp >= 1000) unlocked = true;
-    return { ...badge, unlocked: unlocked || (u.badges?.some(b => b.badgeId === badge.id)) };
-  });
+  // ── Badge shelf: merge DB badges + stats-based checks ───────────────────
+  const dbBadgeIds = new Set((u.badges ?? []).map((b) => b.badgeId));
+
+  // Build merged badge list: known definitions + any extra DB badges not in defs
+  const knownIds = new Set(PROFILE_BADGE_DEFS.map((b) => b.id));
+  const extraDbBadges = (u.badges ?? [])
+    .filter((b) => !knownIds.has(b.badgeId))
+    .map((b) => ({
+      id: b.badgeId, name: b.name, icon: b.icon,
+      desc: b.description, unlocked: true
+    }));
+
+  const evaluatedBadges = [
+    ...PROFILE_BADGE_DEFS.map((badge) => ({
+      ...badge,
+      unlocked: dbBadgeIds.has(badge.id),
+    })),
+    ...extraDbBadges,
+  ];
 
   return (
     <div className="page-container max-w-4xl mx-auto space-y-6 animate-fade-in">

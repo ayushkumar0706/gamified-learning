@@ -15,6 +15,10 @@ const dashboardRouter = require('./routes/dashboardRoutes');
 const userRouter = require('./routes/userRoutes');
 const collegeRouter = require('./routes/collegeRoutes');
 const leaderboardRouter = require('./routes/leaderboardRoutes');
+const seniorRouter = require('./routes/seniorRoutes');
+const communityRouter = require('./routes/communityRoutes');
+const jobRouter = require('./routes/jobRoutes');
+const missionRouter = require('./routes/missionRoutes');
 const cors = require('cors')
 
 
@@ -46,6 +50,10 @@ app.use('/api/dashboard', dashboardRouter);
 app.use('/api/users', userRouter);
 app.use('/api/colleges', collegeRouter);
 app.use('/api/leaderboard', leaderboardRouter);
+app.use('/api/seniors', seniorRouter);
+app.use('/api/community/posts', communityRouter);
+app.use('/api/jobs', jobRouter);
+app.use('/api/missions', missionRouter);
 
 
 

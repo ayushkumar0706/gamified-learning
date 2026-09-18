@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import {
-  ChevronLeft, PlayCircle, Code2, Zap, BookOpen, CheckCircle2,
+  ChevronLeft, PlayCircle, Code2, Zap, BookOpen, 
   Clock, ExternalLink, AlertCircle, ArrowRight, Star
 } from 'lucide-react';
 
@@ -73,8 +73,7 @@ function CodingCard({ resource }) {
   const diffColor = {
     Easy:   { bg: 'var(--color-success-light)', text: 'var(--color-success)'  },
     Medium: { bg: 'var(--color-xp-light)',      text: 'var(--color-xp-dark)'  },
-    Hard:   { bg: 'var(--color-danger-light)',  text: 'var(--color-danger)'   },
-  }[resource.difficulty] || { bg: 'var(--color-bg)', text: 'var(--color-text-muted)' };
+    Hard:   { bg: 'var(--color-danger-light)',  text: 'var(--color-danger)'   } }[resource.difficulty] || { bg: 'var(--color-bg)', text: 'var(--color-text-muted)' };
 
   return (
     <a

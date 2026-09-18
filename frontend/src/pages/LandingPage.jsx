@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom';
 import {
-  Rocket, Flame, Trophy, Star, BookOpen, Users, MessageSquare,
+  Rocket, Flame, Trophy, Star,  Users, MessageSquare,
   ChevronRight, CheckCircle2, Lock, Zap, Target, TrendingUp,
-  ArrowRight, Sparkles, GraduationCap, Code2, FileText, Mic
-} from 'lucide-react';
+  ArrowRight, Sparkles, GraduationCap } from 'lucide-react';
 import PublicNavbar from '../components/PublicNavbar';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -101,8 +100,7 @@ function HeroDashboardCard() {
                     className="h-full rounded-full transition-all duration-700"
                     style={{
                       width: lvl.status === 'done' ? '100%' : lvl.status === 'active' ? '60%' : '0%',
-                      background: lvl.status === 'locked' ? 'transparent' : `linear-gradient(90deg, ${lvl.color}, ${lvl.color}dd)`,
-                    }}
+                      background: lvl.status === 'locked' ? 'transparent' : `linear-gradient(90deg, ${lvl.color}, ${lvl.color}dd)` }}
                   />
                 </div>
               </div>
@@ -220,8 +218,7 @@ export default function LandingPage() {
                     style={{
                       background: lvl.status !== 'locked' ? lvl.color : undefined,
                       boxShadow: lvl.status === 'active' ? `0 0 20px ${lvl.color}55` : undefined,
-                      ringColor: lvl.status === 'active' ? lvl.color : undefined,
-                    }}
+                      ringColor: lvl.status === 'active' ? lvl.color : undefined }}
                   >
                     {lvl.status === 'done' ? '✓' : lvl.icon}
                   </div>

@@ -1,5 +1,5 @@
 import { useAuth } from '../../context/AuthContext';
-import { Flame, Zap, Trophy, Bell, Sun, Moon } from 'lucide-react';
+import {  Zap,  Bell, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Topbar({ title }) {
@@ -11,6 +11,7 @@ export default function Topbar({ title }) {
     const saved = localStorage.getItem('learnup-dark');
     if (saved === 'true') {
       document.documentElement.classList.add('dark');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
       setDark(true);
     }
   }, []);
