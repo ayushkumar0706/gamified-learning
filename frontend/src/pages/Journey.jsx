@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import {
   CheckCircle2, Lock, ChevronDown, ChevronUp, BookOpen,
-  Zap, Trophy, Star, ArrowRight, Sparkles, Target, Loader2
+  Zap, Star, ArrowRight, Sparkles, Target, Award, Loader2
 } from 'lucide-react';
 
-// ── Fallback icon map (used if level.icon is missing) ────────────────────────
 const LEVEL_DEFAULTS = {
   1: { icon: '🌱', color: '#10B981' },
   2: { icon: '🧠', color: '#6366F1' },
@@ -17,7 +16,6 @@ const LEVEL_DEFAULTS = {
   7: { icon: '🎓', color: '#F97316' },
 };
 
-// ── Skeleton ─────────────────────────────────────────────────────────────────
 function JourneySkeleton() {
   return (
     <div className="page-container max-w-3xl mx-auto space-y-4">
@@ -33,17 +31,16 @@ function JourneySkeleton() {
   );
 }
 
-// ── Clearance criterion row ───────────────────────────────────────────────────
-function CriterionRow({ criterion, done }) {
+function CriterionRow({ criterion, met }) {
   return (
-    <div className={`flex items-start gap-2.5 py-1.5 ${done ? 'opacity-100' : 'opacity-70'}`}>
+    <div className={`flex items-start gap-2.5 py-1.5 ${met ? 'opacity-100' : 'opacity-70'}`}>
       <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-        done ? 'bg-[var(--color-success)] text-white' : 'border-2 border-[var(--color-border)]'
+        met ? 'bg-[var(--color-success)] text-white' : 'border-2 border-[var(--color-border)]'
       }`}>
-        {done && <CheckCircle2 size={12} />}
+        {met && <CheckCircle2 size={12} />}
       </div>
       <div>
-        <p className={`text-sm font-medium ${done ? 'text-[var(--color-text)] line-through decoration-[var(--color-success)]' : 'text-[var(--color-text)]'}`}>
+        <p className={`text-sm font-medium ${met ? 'text-[var(--color-text)] line-through decoration-[var(--color-success)]' : 'text-[var(--color-text)]'}`}>
           {criterion.label}
         </p>
         {criterion.description && (
@@ -54,16 +51,32 @@ function CriterionRow({ criterion, done }) {
   );
 }
 
-// ── Level card (expanded detail panel) ───────────────────────────────────────
-function LevelDetailPanel({ level, topics, progress, status, color }) {
+function LevelDetailPanel({ level, topics, progress, status, color, onClear, isClearing }) {
   const navigate = useNavigate();
+  
   const completedTopics = topics.filter(t => {
     const p = progress.find(p => p.topic?._id === t._id || p.topic === t._id);
     return p?.status === 'completed';
   });
+  
   const progressPct = topics.length > 0
     ? Math.round((completedTopics.length / topics.length) * 100)
     : 0;
+
+  const criteriaResults = (level.clearanceCriteria ?? []).map(c => {
+    let met;
+    if (c.type === 'topic-completion') {
+      const completed = progress.filter(p => p.status === 'completed' && topics.some(t => t._id === (p.topic?._id || p.topic))).length;
+      met = completed >= (c.targetCount ?? 1);
+    } else if (c.type === 'quiz-pass') {
+      const passed = progress.filter(p => p.bestScorePercentage >= 70 && topics.some(t => t._id === (p.topic?._id || p.topic))).length;
+      met = passed >= (c.targetCount ?? 1);
+    } else {
+      met = true;
+    }
+    return { ...c, met };
+  });
+  const allCriteriaMet = criteriaResults.every(c => c.met);
 
   return (
     <div className="mt-3 rounded-2xl border overflow-hidden animate-scale-in"
@@ -173,8 +186,8 @@ function LevelDetailPanel({ level, topics, progress, status, color }) {
               Clearance Criteria
             </p>
             <div className="space-y-0.5">
-              {level.clearanceCriteria.map((c) => (
-                <CriterionRow key={c.criteriaId} criterion={c} done={status === 'done'} />
+              {criteriaResults.map((c) => (
+                <CriterionRow key={c.criteriaId} criterion={c} met={status === 'done' || c.met} />
               ))}
             </div>
           </div>
@@ -194,14 +207,28 @@ function LevelDetailPanel({ level, topics, progress, status, color }) {
 
         {/* CTA */}
         {status === 'active' && topics.length > 0 && (
-          <button
-            onClick={() => navigate(`/levels/${level._id}/topics`)}
-            className="btn btn-primary w-full"
-          >
-            <BookOpen size={16} />
-            Continue Learning
-            <ArrowRight size={16} />
-          </button>
+          allCriteriaMet ? (
+            <div className="mt-4 p-4 rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary-light)] text-center">
+              <p className="text-[var(--color-primary)] font-bold mb-2">You have met all requirements!</p>
+              <button 
+                onClick={onClear} 
+                disabled={isClearing}
+                className="btn btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {isClearing ? <Loader2 size={16} className="animate-spin" /> : <Award size={16} />}
+                {isClearing ? 'Clearing...' : 'Clear Level & Claim Reward'}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate(`/levels/${level._id}/topics`)}
+              className="btn btn-primary w-full flex gap-2 items-center justify-center"
+            >
+              <BookOpen size={16} />
+              Continue Learning
+              <ArrowRight size={16} />
+            </button>
+          )
         )}
         {status === 'done' && (
           <div className="flex items-center justify-center gap-2 py-2 text-[var(--color-success)] text-sm font-semibold">
@@ -220,8 +247,7 @@ function LevelDetailPanel({ level, topics, progress, status, color }) {
   );
 }
 
-// ── Individual level node ─────────────────────────────────────────────────────
-function LevelNode({ level, index, isLast, status, topics, progress, isExpanded, onToggle }) {
+function LevelNode({ level, index, isLast, status, topics, progress, isExpanded, onToggle, onClear, isClearing }) {
   const defaults = LEVEL_DEFAULTS[level.order] ?? LEVEL_DEFAULTS[1];
   const icon  = level.icon  || defaults.icon;
   const color = level.color || defaults.color;
@@ -333,6 +359,8 @@ function LevelNode({ level, index, isLast, status, topics, progress, isExpanded,
               progress={progress}
               status={status}
               color={color}
+              onClear={onClear}
+              isClearing={isClearing}
             />
           )}
         </div>
@@ -348,32 +376,35 @@ function LevelNode({ level, index, isLast, status, topics, progress, isExpanded,
   );
 }
 
-// ── Main Journey Page ─────────────────────────────────────────────────────────
 export default function Journey() {
   const [levels, setLevels]       = useState([]);
-  const [topics, setTopics]       = useState([]);   // all topics flat
+  const [topics, setTopics]       = useState([]);
   const [progress, setProgress]   = useState([]);
+  const [clearedLevels, setClearedLevels] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
-  const [expanded, setExpanded]   = useState(null); // level._id of open panel
+  const [expanded, setExpanded]   = useState(null);
+  const [clearing, setClearing]   = useState(null);
+  const [celebration, setCelebration] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [levelsRes, topicsRes, progressRes] = await Promise.all([
+        const [levelsRes, topicsRes, progressRes, clearedRes] = await Promise.all([
           api.get('/levels'),
           api.get('/topics'),
           api.get('/progress'),
+          api.get('/levels/my-progress').catch(() => ({ clearedLevels: [] }))
         ]);
         setLevels(levelsRes.levels   ?? []);
         setTopics(topicsRes.topics   ?? []);
         setProgress(progressRes.progress ?? []);
+        setClearedLevels(clearedRes.clearedLevels ?? []);
 
         // Auto-expand first active level
         const lvls = levelsRes.levels ?? [];
         if (lvls.length > 0) {
-          // Heuristic: first level that isn't fully completed
-          setExpanded(lvls[0]._id); // expand first by default
+          setExpanded(lvls[0]._id);
         }
       } catch (err) {
         setError(err.message);
@@ -395,27 +426,36 @@ export default function Journey() {
     </div>
   );
 
-  // Calculate status per level
   const getLevelStatus = (level, index) => {
-    // Get topics for this level
-    const levelTopics = topics.filter(t =>
-      t.level?._id === level._id || t.level === level._id
-    );
-    if (levelTopics.length === 0) {
-      return index === 0 ? 'active' : index <= 1 ? 'active' : 'locked';
-    }
-    const completedCount = levelTopics.filter(t => {
-      const p = progress.find(p => p.topic?._id === t._id || p.topic === t._id);
-      return p?.status === 'completed';
-    }).length;
-    if (completedCount === levelTopics.length && levelTopics.length > 0) return 'done';
-    if (completedCount > 0) return 'active';
-    // If previous level is done, this one is active; otherwise locked
+    const isCleared = clearedLevels.some(c => c.level === level._id || c.level?._id === level._id);
+    if (isCleared) return 'done';
+    
     if (index === 0) return 'active';
+    
+    const prevLevel = levels[index - 1];
+    const prevCleared = clearedLevels.some(c => c.level === prevLevel._id || c.level?._id === prevLevel._id);
+    if (prevCleared) return 'active';
+    
     return 'locked';
   };
 
-  // Stats
+  const handleClearLevel = async (levelId) => {
+    setClearing(levelId);
+    try {
+      const res = await api.post(`/levels/${levelId}/clear`);
+      setCelebration(res);
+      setClearedLevels(prev => [...prev, { level: levelId }]);
+      const idx = levels.findIndex(l => l._id === levelId);
+      if (idx !== -1 && idx + 1 < levels.length) {
+         setExpanded(levels[idx + 1]._id);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || err.message || 'Failed to clear level');
+    } finally {
+      setClearing(null);
+    }
+  };
+
   const totalCompleted = levels.filter((l, i) => getLevelStatus(l, i) === 'done').length;
   const totalXP = levels.reduce((sum, l) =>
     getLevelStatus(l, levels.indexOf(l)) === 'done' ? sum + (l.xpReward ?? 500) : sum, 0);
@@ -479,6 +519,8 @@ export default function Journey() {
                 progress={progress}
                 isExpanded={expanded === level._id}
                 onToggle={() => setExpanded(expanded === level._id ? null : level._id)}
+                onClear={() => handleClearLevel(level._id)}
+                isClearing={clearing === level._id}
               />
             );
           })}
@@ -493,6 +535,43 @@ export default function Journey() {
           Every topic you complete brings you closer to your placement.
         </p>
       </div>
+
+      {/* Celebration Modal */}
+      {celebration && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[var(--color-card)] w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl animate-scale-in border border-[var(--color-border)]">
+            <div className="w-20 h-20 mx-auto rounded-full bg-[var(--color-success-light)] text-[var(--color-success)] flex items-center justify-center mb-4 text-4xl shadow-inner">
+              🎉
+            </div>
+            <h2 className="text-2xl font-black text-[var(--color-text)] mb-2">Level Cleared!</h2>
+            <p className="text-[var(--color-text-muted)] mb-6 text-sm">{celebration.message}</p>
+            
+            <div className="flex justify-center gap-4 mb-6">
+              <div className="bg-[var(--color-bg)] rounded-xl p-3 flex-1 border border-[var(--color-border)]">
+                <p className="text-2xl font-black text-[var(--color-xp)]">+{celebration.xpAwarded}</p>
+                <p className="text-xs text-[var(--color-text-muted)] font-bold mt-1 uppercase">XP Earned</p>
+              </div>
+            </div>
+
+            {celebration.badgeAwarded && (
+              <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-6 text-left flex gap-3 items-center">
+                <span className="text-3xl drop-shadow-md">{celebration.badgeAwarded.icon}</span>
+                <div>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider mb-0.5">New Badge Unlocked!</p>
+                  <p className="font-bold text-[var(--color-text)]">{celebration.badgeAwarded.name}</p>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setCelebration(null)}
+              className="btn btn-primary w-full py-3 text-lg"
+            >
+              Continue Journey
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

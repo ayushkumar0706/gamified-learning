@@ -1,8 +1,8 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
-  Trophy, Flame, Zap, TrendingUp, Users, Medal, ChevronUp, AlertCircle
+  Trophy, Flame, Zap, Users, AlertCircle
 } from 'lucide-react';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -164,6 +164,7 @@ export default function Leaderboard() {
   const { user } = useAuth();
 
   const [filter,           setFilter]           = useState('overall');
+  const [period,           setPeriod]           = useState('all-time');
   const [leaderboard,      setLeaderboard]      = useState([]);
   const [currentUserEntry, setCurrentUserEntry] = useState(null);
   const [loading,          setLoading]          = useState(true);
@@ -174,7 +175,7 @@ export default function Leaderboard() {
       setLoading(true);
       setError('');
       try {
-        const data = await api.get(`/leaderboard?filter=${filter}&limit=50`);
+        const data = await api.get(`/leaderboard?filter=${filter}&period=${period}&limit=50`);
         setLeaderboard(data.leaderboard ?? []);
         setCurrentUserEntry(data.currentUserEntry ?? null);
       } catch (err) {
@@ -184,7 +185,7 @@ export default function Leaderboard() {
       }
     };
     load();
-  }, [filter]);
+  }, [filter, period]);
 
   if (loading) return <LeaderboardSkeleton />;
 
@@ -199,7 +200,7 @@ export default function Leaderboard() {
   );
 
   const top3 = leaderboard.slice(0, 3);
-  const rest = leaderboard.slice(3);
+  // Removed unused rest variable
   // Is current user already shown in the main list?
   const currentUserInList = leaderboard.some((r) => r.isCurrentUser);
 
@@ -220,19 +221,43 @@ export default function Leaderboard() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`btn btn-sm flex items-center gap-1.5 ${
-              filter === f.id ? 'btn-primary' : 'btn-secondary'
-            }`}
-          >
-            {f.icon}
-            {f.label}
-          </button>
-        ))}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex gap-2 flex-wrap">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`btn btn-sm flex items-center gap-1.5 ${
+                filter === f.id ? 'btn-primary' : 'btn-secondary'
+              }`}
+            >
+              {f.icon}
+              {f.label}
+            </button>
+          ))}
+        </div>
+        
+        {filter === 'overall' && (
+          <div className="flex bg-[var(--color-surface)] p-1 rounded-xl border border-[var(--color-border)] text-xs font-semibold self-start sm:self-auto">
+            {[
+              { id: 'all-time', label: 'All Time' },
+              { id: 'monthly', label: 'This Month' },
+              { id: 'weekly', label: 'This Week' }
+            ].map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setPeriod(p.id)}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  period === p.id
+                    ? 'bg-[var(--color-primary)] text-white shadow-sm'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {leaderboard.length === 0 ? (

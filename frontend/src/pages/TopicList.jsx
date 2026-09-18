@@ -9,7 +9,7 @@ import {
 export default function TopicList() {
   const { levelId } = useParams();
   const [topics, setTopics] = useState([]);
-  const [levels, setLevels] = useState([]);
+  // Removed unused levels state
   const [levelInfo, setLevelInfo] = useState(null);
   const [progressMap, setProgressMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,7 @@ export default function TopicList() {
         ]);
 
         setTopics(topicsRes.topics || []);
-        setLevels(levelsRes.levels || []);
+        // setLevels(levelsRes.levels || []);
 
         if (levelId) {
           const currentLvl = levelsRes.levels?.find((l) => l._id === levelId);

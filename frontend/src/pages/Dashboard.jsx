@@ -228,7 +228,7 @@ export default function Dashboard() {
   const handleClaim = async (missionId) => {
     setClaiming(missionId);
     try {
-      const res = await api.post(`/missions/${missionId}/claim`);
+      await api.post(`/missions/${missionId}/claim`);
       // Update missions state to show claimed
       setMissions(prev => prev.map(m => m.id === missionId ? { ...m, isClaimed: true } : m));
       // Optionally update XP dynamically or just refetch dashboard

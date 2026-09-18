@@ -106,7 +106,7 @@ const MOCK_JOBS = [
 ];
 
 export default function Jobs() {
-  const { user } = useAuth();
+  useAuth();
   const [jobs] = useState(MOCK_JOBS);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('All');

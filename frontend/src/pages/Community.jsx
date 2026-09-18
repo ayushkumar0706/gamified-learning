@@ -22,7 +22,7 @@ function formatTime(dateString) {
 }
 
 export default function Community() {
-  const { user } = useAuth();
+  useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState('all');
@@ -55,8 +55,8 @@ export default function Community() {
   };
 
   useEffect(() => {
-    fetchPosts();
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchPosts();
   }, []);
 
   const handleUpvote = async (postId) => {
