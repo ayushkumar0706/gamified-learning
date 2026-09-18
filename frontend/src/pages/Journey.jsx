@@ -393,7 +393,7 @@ export default function Journey() {
         const [levelsRes, topicsRes, progressRes, clearedRes] = await Promise.all([
           api.get('/levels'),
           api.get('/topics'),
-          api.get('/progress'),
+          api.get('/progress/me'),
           api.get('/levels/my-progress').catch(() => ({ clearedLevels: [] }))
         ]);
         setLevels(levelsRes.levels   ?? []);

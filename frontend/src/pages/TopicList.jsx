@@ -28,7 +28,7 @@ export default function TopicList() {
         const endpoint = levelId ? `/topics?level=${levelId}` : '/topics';
         const [topicsRes, progressRes, levelsRes] = await Promise.all([
           api.get(endpoint),
-          api.get('/progress').catch(() => ({ progress: [] })),
+          api.get('/progress/me').catch(() => ({ progress: [] })),
           api.get('/levels').catch(() => ({ levels: [] })),
         ]);
 

@@ -153,7 +153,7 @@ export default function TopicDetail() {
           api.get(`/quizzes?topic=${id}`),
           api.get(`/videoresources?topic=${id}`).catch(() => ({ videos: [] })),
           api.get(`/coding-resources?topic=${id}`).catch(() => ({ resources: [] })),
-          api.get('/progress').catch(() => ({ progress: [] })),
+          api.get('/progress/me').catch(() => ({ progress: [] })),
         ]);
 
         setTopic(topicData.topic);
