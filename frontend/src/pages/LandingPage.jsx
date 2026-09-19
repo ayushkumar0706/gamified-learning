@@ -5,6 +5,9 @@ import {
   ArrowRight, Sparkles, GraduationCap } from 'lucide-react';
 import PublicNavbar from '../components/PublicNavbar';
 
+import { useState, useEffect } from 'react';
+import { api } from '../services/api';
+
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const CAREER_LEVELS = [
@@ -24,13 +27,6 @@ const FEATURES = [
   { icon: <Star size={22} />,        color: 'var(--color-secondary)',  label: 'Badges',             desc: 'Unlock achievement badges as you progress.' },
   { icon: <Target size={22} />,      color: 'var(--color-primary)',    label: 'Challenges',         desc: 'Real problems to test your skills at each stage.' },
   { icon: <TrendingUp size={22} />,  color: 'var(--color-success)',    label: 'Level Ups',          desc: 'Clear criteria to unlock the next career level.' },
-];
-
-const LEADERBOARD_DEMO = [
-  { rank: 1, medal: '🥇', name: 'Rahul Sharma',    level: 14, xp: '4,250', branch: 'CSE' },
-  { rank: 2, medal: '🥈', name: 'Priya Verma',     level: 13, xp: '4,100', branch: 'IT'  },
-  { rank: 3, medal: '🥉', name: 'Arjun Nair',      level: 12, xp: '3,920', branch: 'CSE' },
-  { rank: 14, medal: '14', name: 'You',             level: 7,  xp: '1,740', branch: '—',   isYou: true },
 ];
 
 // ── Components ────────────────────────────────────────────────────────────────
@@ -115,6 +111,18 @@ function HeroDashboardCard() {
 // ── Main Landing Page ─────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const [publicLeaderboard, setPublicLeaderboard] = useState([]);
+
+  useEffect(() => {
+    api.get('/leaderboard/public?limit=5')
+      .then(res => {
+        if (res.success) {
+          setPublicLeaderboard(res.leaderboard || []);
+        }
+      })
+      .catch(err => console.error('Failed to load public leaderboard', err));
+  }, []);
+
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <PublicNavbar />
@@ -305,8 +313,8 @@ export default function LandingPage() {
             <div className="card shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="font-bold text-[var(--color-text)]">🏆 IET Lucknow</p>
-                  <p className="text-xs text-[var(--color-text-muted)]">All Time · Overall</p>
+                  <p className="font-bold text-[var(--color-text)]">🏆 Top Students</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">Global · All Time</p>
                 </div>
                 <div className="flex gap-1">
                   {['Week', 'Month', 'All Time'].map((t) => (
@@ -324,10 +332,10 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                {LEADERBOARD_DEMO.map((row) => (
+                {publicLeaderboard.map((row) => (
                   <div
-                    key={row.rank}
-                    className={`leaderboard-row ${row.isYou ? 'current-user' : ''}`}
+                    key={row.id}
+                    className="leaderboard-row"
                   >
                     <span className={`w-8 text-center font-bold text-sm ${
                       row.rank === 1 ? 'rank-medal-1' :
@@ -335,7 +343,7 @@ export default function LandingPage() {
                       row.rank === 3 ? 'rank-medal-3' :
                       'text-[var(--color-text-muted)]'
                     }`}>
-                      {row.rank <= 3 ? row.medal : `#${row.rank}`}
+                      {row.rank === 1 ? '🥇' : row.rank === 2 ? '🥈' : row.rank === 3 ? '🥉' : `#${row.rank}`}
                     </span>
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
@@ -344,17 +352,20 @@ export default function LandingPage() {
                       {row.name[0]}
                     </div>
                     <div className="flex-1">
-                      <p className={`text-sm font-semibold ${row.isYou ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
-                        {row.name} {row.isYou && <span className="text-xs font-normal">(you)</span>}
+                      <p className="text-sm font-semibold text-[var(--color-text)]">
+                        {row.name}
                       </p>
-                      <p className="text-xs text-[var(--color-text-muted)]">Level {row.level} · {row.branch}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">Level {row.level} · {row.college}</p>
                     </div>
                     <span className="badge badge-xp text-xs">{row.xp} XP</span>
                   </div>
                 ))}
+                {publicLeaderboard.length === 0 && (
+                   <p className="text-xs text-[var(--color-text-muted)] text-center py-4">No data available</p>
+                )}
               </div>
               <p className="text-xs text-[var(--color-text-subtle)] text-center mt-3">
-                ↑ You moved up 3 positions this week 🎉
+                Top students across all colleges 🚀
               </p>
             </div>
           </div>

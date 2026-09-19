@@ -5,6 +5,7 @@ import {
   MessageSquare, ThumbsUp, MessageCircle,  Plus, Search,
   Flame, Sparkles,  CheckCircle2,  Send, X, Shield,
    CornerDownRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const CHANNELS = [
   { id: 'all', name: 'All Discussions', icon: '🌐' },
@@ -28,6 +29,9 @@ export default function Community() {
   const [selectedChannel, setSelectedChannel] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('trending'); // 'trending' | 'newest'
+  const [filterSeniors, setFilterSeniors] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Create Post Modal State
   const [isCreatingPost, setIsCreatingPost] = useState(false);
@@ -43,9 +47,12 @@ export default function Community() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/community/posts');
+      const res = await api.get(`/community/posts?page=${page}&limit=10${filterSeniors ? '&filter=seniors' : ''}`);
       if (res.success) {
         setPosts(res.posts);
+        if (res.pagination) {
+          setTotalPages(res.pagination.totalPages);
+        }
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -57,7 +64,7 @@ export default function Community() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPosts();
-  }, []);
+  }, [page, filterSeniors]);
 
   const handleUpvote = async (postId) => {
     try {
@@ -197,8 +204,19 @@ export default function Community() {
           />
         </div>
 
-        {/* Sort toggle */}
-        <div className="flex items-center gap-2 self-end sm:self-auto text-xs">
+        {/* Sort and Filter toggle */}
+        <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto text-xs">
+          <button
+            onClick={() => { setFilterSeniors(!filterSeniors); setPage(1); }}
+            className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-all cursor-pointer ${
+              filterSeniors
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white'
+                : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)]'
+            }`}
+          >
+            <Shield size={13} /> Seniors Only
+          </button>
+
           <button
             onClick={() => setSortBy('trending')}
             className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-all cursor-pointer ${
@@ -270,7 +288,7 @@ export default function Community() {
               >
                 {/* Author row */}
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
+                  <Link to={`/profile/${post.author.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
                       {post.author.name
                         .split(' ')
@@ -282,21 +300,23 @@ export default function Community() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-xs text-[var(--color-text)]">{post.author.name}</span>
                         {post.author.role === 'senior' && (
-                          <span className="badge badge-senior text-[10px] py-0 px-1.5 flex items-center gap-0.5">
+                          <span className="badge badge-senior text-[10px] py-0.5 px-1.5 flex items-center gap-1">
                             <Shield size={10} /> Senior Guide
                           </span>
                         )}
                         {post.author.company && (
-                          <span className="text-[10px] text-[var(--color-primary)] font-semibold">
-                            • {post.author.company}
+                          <span className="text-[10px] text-[var(--color-primary)] font-bold">
+                            @ {post.author.company}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-[var(--color-text-subtle)]">
-                        {post.author.branch} • {formatTime(post.createdAt)}
+                      <p className="text-[10px] text-[var(--color-text-subtle)] mt-0.5">
+                        {[post.author.branch, post.author.year].filter(Boolean).join(' · ')}
+                        <span className="mx-1.5">•</span>
+                        {formatTime(post.createdAt)}
                       </p>
                     </div>
-                  </div>
+                  </Link>
 
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
                     #{post.channel}
@@ -363,7 +383,7 @@ export default function Community() {
                     {post.replies.map((rep) => (
                       <div key={rep.id} className="p-2.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] text-xs">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-1.5">
+                          <Link to={`/profile/${rep.author.id}`} className="flex items-center gap-1.5 hover:opacity-80">
                             <span className="font-bold text-[var(--color-text)]">{rep.author.name}</span>
                             {rep.author.role === 'senior' && (
                               <span className="badge badge-senior text-[9px] py-0 px-1">Senior Guide</span>
@@ -373,7 +393,7 @@ export default function Community() {
                                 ({rep.author.company})
                               </span>
                             )}
-                          </div>
+                          </Link>
                           <span className="text-[10px] text-[var(--color-text-subtle)]">{formatTime(rep.createdAt)}</span>
                         </div>
                         <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">{rep.content}</p>
@@ -402,6 +422,29 @@ export default function Community() {
                 )}
               </div>
             ))
+          )}
+
+          {/* Pagination Controls */}
+          {!loading && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-8">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                className="btn btn-secondary text-xs px-3 py-1.5 cursor-pointer disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-medium text-[var(--color-text-muted)]">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                disabled={page === totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                className="btn btn-secondary text-xs px-3 py-1.5 cursor-pointer disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           )}
         </div>
       </div>

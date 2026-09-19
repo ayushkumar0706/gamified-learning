@@ -28,4 +28,20 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
+const optionalAuthMiddleware = async (req, res, next) => {
+  try {
+    const { token } = req.cookies;
+    if (token) {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      if (payload._id) {
+        req.user = await User.findById(payload._id);
+      }
+    }
+  } catch (err) {
+    // ignore
+  }
+  next();
+};
+
 module.exports = authMiddleware;
+module.exports.optionalAuth = optionalAuthMiddleware;

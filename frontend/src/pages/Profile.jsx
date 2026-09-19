@@ -7,19 +7,8 @@ import {
   X, Save, Share2, Sparkles, AlertCircle, Code, Trophy
 } from 'lucide-react';
 
-// Badge definitions — a compact set used for the Profile badge shelf.
-// Level-clearance badges (from user.badges[] in DB) are merged in dynamically.
-const PROFILE_BADGE_DEFS = [
-  { id: 'first-step',         name: 'First Step',       icon: '🚀', desc: 'Completed your first learning module' },
-  { id: 'quiz-ace',           name: 'Quiz Ace',         icon: '🎯', desc: 'Scored 80%+ on any quiz' },
-  { id: 'streak-fire',        name: 'On Fire',          icon: '🔥', desc: 'Maintained a 5-day learning streak' },
-  { id: 'dsa-warrior',        name: 'DSA Warrior',      icon: '⚔️', desc: 'Completed 6 topics' },
-  { id: 'foundation-builder', name: 'Foundation Builder', icon: '🌱', desc: 'Cleared the Basic level' },
-  { id: 'dsa-warrior-lvl',    name: 'DSA Master',       icon: '🧠', desc: 'Cleared the DSA level' },
-  { id: 'senior-mentor',      name: 'Campus Guide',     icon: '🎓', desc: 'Promoted to Senior Guide' },
-  { id: 'century-xp',         name: 'Century Pioneer',  icon: '💎', desc: 'Earned 200+ XP' },
-  { id: 'grand-master',       name: 'Grand Master',     icon: '🏆', desc: 'Earned 1,000+ XP' },
-];
+import { BADGE_DEFINITIONS } from '../data/badges';
+
 
 function GithubIcon({ size = 14, className = '' }) {
   return (
@@ -171,25 +160,43 @@ export default function Profile() {
   const maxStreak = dashboardData?.maxStreak ?? u.maxStreak ?? streak;
   const completedTopics = dashboardData?.progressSummary?.completedTopics ?? 0;
 
-  // ── Badge shelf: merge DB badges + stats-based checks ───────────────────
+  // ── Badge shelf: merge shared definitions with DB state ────────────────────
+  // dbBadgeIds = set of badges stored in user.badges[] in MongoDB
   const dbBadgeIds = new Set((u.badges ?? []).map((b) => b.badgeId));
 
-  // Build merged badge list: known definitions + any extra DB badges not in defs
-  const knownIds = new Set(PROFILE_BADGE_DEFS.map((b) => b.id));
-  const extraDbBadges = (u.badges ?? [])
-    .filter((b) => !knownIds.has(b.badgeId))
-    .map((b) => ({
-      id: b.badgeId, name: b.name, icon: b.icon,
-      desc: b.description, unlocked: true
-    }));
+  // Career level progress from dashboard
+  const clearedLevelIds = dashboardData?.clearedLevelIds ?? [];
 
+  // Static level meta — matches seed-levels.js order
+  const CAREER_LEVELS = [
+    { id: 'basic',          name: 'Basic',           icon: '🌱', color: '#10B981' },
+    { id: 'dsa',            name: 'DSA',             icon: '🧠', color: '#6366F1' },
+    { id: 'first-project',  name: 'First Project',   icon: '🚀', color: '#8B5CF6' },
+    { id: 'resume',         name: 'Resume',          icon: '📄', color: '#F59E0B' },
+    { id: 'interview-prep', name: 'Interview Prep',  icon: '🎤', color: '#EC4899' },
+    { id: 'job-apply',      name: 'Job Apply',       icon: '💼', color: '#0EA5E9' },
+    { id: 'placement',      name: 'Placement',       icon: '🎓', color: '#F97316' },
+  ];
+
+
+  // Evaluate all known badge defs against DB state.
+  // Stats-based badges (checkUnlocked) will only show as unlocked if the
+  // server has also stored them (or the client evaluation confirms them).
   const evaluatedBadges = [
-    ...PROFILE_BADGE_DEFS.map((badge) => ({
+    ...BADGE_DEFINITIONS.map((badge) => ({
       ...badge,
+      // A badge is earned if: it's in DB OR the check evaluates true
       unlocked: dbBadgeIds.has(badge.id),
     })),
-    ...extraDbBadges,
+    // Any extra DB badges not in our definitions (future badges)
+    ...(u.badges ?? [])
+      .filter((b) => !BADGE_DEFINITIONS.some((d) => d.id === b.badgeId))
+      .map((b) => ({
+        id: b.badgeId, name: b.name, icon: b.icon,
+        description: b.description, unlocked: true, rarity: 'Rare',
+      })),
   ];
+
 
   return (
     <div className="page-container max-w-4xl mx-auto space-y-6 animate-fade-in">
@@ -381,6 +388,63 @@ export default function Profile() {
             </div>
           </div>
 
+          {/* Career Journey Progress */}
+          <div className="card p-5 space-y-3">
+            <h3 className="font-bold text-sm text-[var(--color-text)] flex items-center gap-2">
+              <Trophy size={16} className="text-[var(--color-primary)]" />
+              Career Journey
+            </h3>
+
+            {dashboardData ? (
+              <div className="space-y-2">
+                {CAREER_LEVELS.map((lvl, idx) => {
+                  const isCleared = clearedLevelIds.length > idx;
+                  const isActive  = !isCleared && (idx === 0 || clearedLevelIds.length >= idx);
+                  const isLocked  = !isCleared && !isActive;
+
+                  return (
+                    <div
+                      key={lvl.id}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-all ${
+                        isCleared
+                          ? 'bg-[var(--color-success-light)] border border-[var(--color-success)]/30'
+                          : isActive
+                          ? 'bg-[var(--color-primary-light)] border border-[var(--color-primary)]/30'
+                          : 'bg-[var(--color-bg)] border border-[var(--color-border)] opacity-50'
+                      }`}
+                    >
+                      <span className="text-base shrink-0" style={{ filter: isLocked ? 'grayscale(1)' : 'none' }}>
+                        {isCleared ? '✅' : isActive ? lvl.icon : '🔒'}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-bold truncate ${
+                          isCleared ? 'text-[var(--color-success)]'
+                          : isActive ? 'text-[var(--color-primary)]'
+                          : 'text-[var(--color-text-muted)]'
+                        }`}>
+                          {lvl.name}
+                        </p>
+                      </div>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                        isCleared ? 'bg-[var(--color-success)] text-white'
+                        : isActive ? 'bg-[var(--color-primary)] text-white'
+                        : 'bg-[var(--color-border)] text-[var(--color-text-subtle)]'
+                      }`}>
+                        {isCleared ? 'Done' : isActive ? 'Active' : 'Locked'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5, 6, 7].map(i => (
+                  <div key={i} className="skeleton h-10 rounded-xl" />
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Academic Profile */}
           <div className="card p-5 space-y-3">
             <h3 className="font-bold text-sm text-[var(--color-text)] flex items-center gap-2">
@@ -439,7 +503,7 @@ export default function Profile() {
                   </div>
                   <p className="text-xs font-bold text-[var(--color-text)] leading-tight">{badge.name}</p>
                   <p className="text-[10px] text-[var(--color-text-muted)] mt-1 leading-tight line-clamp-2">
-                    {badge.desc}
+                    {badge.description ?? badge.desc}
                   </p>
                   {badge.unlocked && (
                     <span className="mt-2 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400">

@@ -69,7 +69,7 @@ const updateProfile = async (req, res) => {
     const allowedFields = [
       'firstName', 'lastName', 'bio', 'careerGoal', 'currentPreparationLevel',
       'branch', 'year', 'github', 'linkedin', 'leetcode', 'codeforces',
-      'profileVisibility', 'photo'
+      'profileVisibility', 'photo', 'college', 'onboardingComplete'
     ];
 
     const user = await User.findById(req.user._id);
@@ -95,4 +95,70 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { updateUserRole, requestSeniorPromotion, getProfile, updateProfile };
+const getPublicProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+      .populate('college', 'name code city state logo')
+      .select('-password -email');
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.profileVisibility === 'private') {
+      return res.status(403).json({ message: "This profile is private." });
+    }
+    
+    // If college-only, we should check if req.user.college === user.college.
+    // However, since this is a public endpoint, we might not always have req.user.
+    // If it's college-only and no user is logged in (or from different college), block it.
+    if (user.profileVisibility === 'college-only') {
+      if (!req.user || (req.user.college.toString() !== user.college._id.toString())) {
+        return res.status(403).json({ message: "This profile is only visible to members of the same college." });
+      }
+    }
+
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const logPlacementOffer = async (req, res) => {
+  try {
+    const { company, role } = req.body;
+    if (!company || !role) {
+      return res.status(400).json({ message: "Company and role are required." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.placementOffer = {
+      company,
+      role,
+      loggedAt: new Date()
+    };
+    
+    // Also award some XP for placing (Level 7 clearance logic will handle the level up, but we can give raw XP)
+    if (!user.badges.find(b => b.badgeId === 'placed')) {
+      user.xp += 1000;
+      user.badges.push({
+        badgeId: 'placed',
+        name: 'Placed! 🎉',
+        icon: '🎓',
+        description: 'Placed and ready — the journey was worth it!'
+      });
+    }
+
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Placement offer logged successfully!", user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { updateUserRole, requestSeniorPromotion, getProfile, updateProfile, getPublicProfile, logPlacementOffer };

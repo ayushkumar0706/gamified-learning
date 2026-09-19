@@ -344,14 +344,15 @@ function StepAccount({ data, onChange }) {
 }
 
 // ── Main Onboarding Component ─────────────────────────────────────────────────
-const TOTAL_STEPS = 5;
 
 export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { login } = useAuth();
+  const { login, user, refreshUser } = useAuth();
   const navigate = useNavigate();
+
+  const ACTUAL_TOTAL_STEPS = user ? 4 : 5;
 
   const [formData, setFormData] = useState({
     college: null,
@@ -380,19 +381,33 @@ export default function Onboarding() {
     setError('');
     setSubmitting(true);
     try {
-      const body = {
-        firstName: formData.firstName,
-        lastName: formData.lastName || undefined,
-        email: formData.email,
-        password: formData.password,
-        college: formData.college !== 'other' ? formData.college : undefined,
-        year: formData.year || undefined,
-        branch: formData.branch || undefined,
-        careerGoal: formData.careerGoal || undefined,
-        currentPreparationLevel: formData.currentPreparationLevel || undefined };
-      await api.post('/auth/register', body);
-      await login(formData.email, formData.password);
-      navigate('/dashboard');
+      if (user) {
+        const body = {
+          college: formData.college !== 'other' ? formData.college : undefined,
+          year: formData.year || undefined,
+          branch: formData.branch || undefined,
+          careerGoal: formData.careerGoal || undefined,
+          currentPreparationLevel: formData.currentPreparationLevel || undefined,
+          onboardingComplete: true
+        };
+        await api.put('/users/profile', body);
+        await refreshUser();
+        navigate('/dashboard');
+      } else {
+        const body = {
+          firstName: formData.firstName,
+          lastName: formData.lastName || undefined,
+          email: formData.email,
+          password: formData.password,
+          college: formData.college !== 'other' ? formData.college : undefined,
+          year: formData.year || undefined,
+          branch: formData.branch || undefined,
+          careerGoal: formData.careerGoal || undefined,
+          currentPreparationLevel: formData.currentPreparationLevel || undefined };
+        await api.post('/auth/register', body);
+        await login(formData.email, formData.password);
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -465,9 +480,9 @@ export default function Onboarding() {
         <div className="w-full max-w-md">
           {/* Progress */}
           <div className="flex items-center justify-between mb-8">
-            <StepDots total={TOTAL_STEPS} current={step} />
+            <StepDots total={ACTUAL_TOTAL_STEPS} current={step} />
             <span className="text-xs text-[var(--color-text-muted)] font-medium">
-              Step {step + 1} of {TOTAL_STEPS}
+              Step {step + 1} of {ACTUAL_TOTAL_STEPS}
             </span>
           </div>
 
@@ -496,7 +511,7 @@ export default function Onboarding() {
               </button>
             )}
 
-            {step < TOTAL_STEPS - 1 ? (
+            {step < ACTUAL_TOTAL_STEPS - 1 ? (
               <button
                 onClick={() => { setError(''); setStep((s) => s + 1); }}
                 disabled={!canProceed()}

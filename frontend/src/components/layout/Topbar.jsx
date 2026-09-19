@@ -1,5 +1,5 @@
 import { useAuth } from '../../context/AuthContext';
-import {  Zap,  Bell, Sun, Moon } from 'lucide-react';
+import { Zap, Bell, Sun, Moon, Building2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Topbar({ title }) {
@@ -25,10 +25,16 @@ export default function Topbar({ title }) {
 
   return (
     <header className="topbar justify-between">
-      {/* Page title (optional) */}
+      {/* Left: page title + college chip */}
       <div className="flex items-center gap-3">
         {title && (
           <h1 className="text-base font-bold text-[var(--color-text)]">{title}</h1>
+        )}
+        {user?.college?.name && (
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--color-primary-light)] text-[var(--color-primary)] text-xs font-semibold border border-[var(--color-primary)]/20">
+            <Building2 size={11} />
+            <span className="max-w-[160px] truncate">{user.college.name}</span>
+          </div>
         )}
       </div>
 

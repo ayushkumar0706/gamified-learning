@@ -1,6 +1,8 @@
 const Level = require('../Models/level');
 const Topic = require('../Models/topic');
 const Progress = require('../Models/progress');
+const Attempt = require('../Models/attempt');
+const Quiz = require('../Models/quiz');
 const UserLevelProgress = require('../Models/userLevelProgress');
 const User = require('../Models/user');
 const XPLog = require('../Models/xpLog');
@@ -16,9 +18,10 @@ const { calculateLevel } = require('../utils/xpToLevel');
  * @param {Object} criterion   - Level.clearanceCriteria entry
  * @param {Array}  topicIds    - ObjectIds of all topics in the level
  * @param {Array}  progressDocs - Progress docs for this user + these topics
- * @returns {{ met: Boolean, current: Number, target: Number }}
+ * @param {Number} attemptCount - Total quiz attempts by user across the level's topics
+ * @returns {{ met: Boolean, current: Number, target: Number, note?: String }}
  */
-function checkCriterion(criterion, topicIds, progressDocs) {
+function checkCriterion(criterion, topicIds, progressDocs, attemptCount = 0, user = null) {
   const target = criterion.targetCount ?? 1;
 
   switch (criterion.type) {
@@ -34,15 +37,53 @@ function checkCriterion(criterion, topicIds, progressDocs) {
     }
 
     case 'problem-count': {
-      // We don't track individual problem attempts yet.
-      // Treat as automatically met so it doesn't block progress.
-      return { met: true, current: target, target };
+      // Use quiz attempt count as a real proxy for practice problems solved.
+      // Each quiz submission in this level counts as practicing.
+      const current = Math.min(attemptCount, target * 3); // cap display at 3× target
+      return {
+        met: attemptCount >= target,
+        current: Math.min(attemptCount, target),
+        target,
+        note: attemptCount < target
+          ? `Complete ${target - Math.min(attemptCount, target)} more quizzes/practice sessions in this level.`
+          : null
+      };
     }
 
-    case 'challenge':
-    case 'project':
+    case 'challenge': {
+      // Challenge completion requires manual verification or a future challenge system.
+      // Currently semi-blocked: allows clearance after sufficient topic + quiz progress,
+      // but shows the user that this step is coming.
+      // Auto-pass for now with a clear note — future implementation will block this.
+      return {
+        met: true,
+        current: target,
+        target,
+        note: 'This criterion will be verified manually or via an upcoming challenge system.'
+      };
+    }
+
+    case 'project': {
+      // Project submission requires manual verification.
+      // Semi-blocked like challenge — auto-passes with clear messaging.
+      return {
+        met: true,
+        current: target,
+        target,
+        note: 'Submit your project link to a senior or admin for verification.'
+      };
+    }
+
     case 'manual': {
-      // Manual / future criteria — treat as automatically met for now
+      if (criterion.criteriaId === 'receive-offer') {
+        const hasOffer = !!(user && user.placementOffer && user.placementOffer.company);
+        return {
+          met: hasOffer,
+          current: hasOffer ? 1 : 0,
+          target: 1,
+          note: hasOffer ? null : 'Please log your placement offer to complete this level.'
+        };
+      }
       return { met: true, current: target, target };
     }
 
@@ -50,6 +91,7 @@ function checkCriterion(criterion, topicIds, progressDocs) {
       return { met: true, current: target, target };
   }
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/levels/my-progress
@@ -110,11 +152,21 @@ const clearLevel = async (req, res) => {
       ? await Progress.find({ user: userId, topic: { $in: topicIds } })
       : [];
 
+    // ── 5b. Count quiz attempts for topics in this level (for problem-count) ──
+    let attemptCount = 0;
+    if (topicIds.length > 0) {
+      const levelQuizzes = await Quiz.find({ topic: { $in: topicIds } }).select('_id');
+      const quizIds = levelQuizzes.map(q => q._id);
+      if (quizIds.length > 0) {
+        attemptCount = await Attempt.countDocuments({ user: userId, quiz: { $in: quizIds } });
+      }
+    }
+
     // ── 6. Evaluate each clearance criterion ─────────────────────────────────
     const criteriaResults = (level.clearanceCriteria ?? []).map(criterion => ({
       criteriaId: criterion.criteriaId,
       label:      criterion.label,
-      ...checkCriterion(criterion, topicIds, progressDocs)
+      ...checkCriterion(criterion, topicIds, progressDocs, attemptCount, req.user)
     }));
 
     const allMet = criteriaResults.every(c => c.met);

@@ -5,7 +5,7 @@ const User = require('../Models/user');
 const Progress = require('../Models/progress');
 const XPLog = require('../Models/xpLog');
 const { calculateLevel } = require('../utils/xpToLevel');
-const { getISTDayDifference } = require('../utils/streak');
+const { getISTDayDifference, updateUserStreak } = require('../utils/streak');
 
 
 const checkAnswer = async (req, res) => {
@@ -52,7 +52,12 @@ const submitAttempt = async (req, res) => {
 
     const correctCount = verifiedAnswers.filter((a) => a.isCorrect).length;
     const scorePercentage = Math.round((correctCount / verifiedAnswers.length) * 100);
-    const xpAwarded = correctCount * 10;
+
+    // XP formula: 20 XP per correct answer + 50 XP completion bonus for passing (≥70%)
+    // Example: 8/10 correct = 160 + 50 = 210 XP | 10/10 correct = 200 + 50 = 250 XP
+    const baseXP        = correctCount * 20;
+    const completionBonus = scorePercentage >= 70 ? 50 : 0;
+    const xpAwarded     = baseXP + completionBonus;
 
     const attempt = await Attempt.create({
       user: req.user._id,
@@ -81,30 +86,7 @@ const submitAttempt = async (req, res) => {
 
 
     // Update streak
-    const now = new Date();
-
-    if (!user.lastActivityDate) {
-
-      user.currentStreak = 1;
-    } else {
-      const dayDiff = getISTDayDifference(user.lastActivityDate, now);
-
-      if (dayDiff === 0) {
-
-      } else if (dayDiff === 1) {
-
-        user.currentStreak += 1;
-      } else {
-
-        user.currentStreak = 1;
-      }
-    }
-
-    user.lastActivityDate = now;
-
-    if (user.currentStreak > user.maxStreak) {
-      user.maxStreak = user.currentStreak;
-    }
+    updateUserStreak(user);
 
 
     await user.save();

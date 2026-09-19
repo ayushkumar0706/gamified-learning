@@ -1,4 +1,5 @@
 const Topic = require('../Models/topic');
+const { updateUserStreak } = require('../utils/streak');
 
 
 // Create a new topic — Admin only
@@ -43,6 +44,12 @@ const getTopicById = async (req, res) => {
 
     if (!topic) {
       return res.status(404).json({ message: "Topic not found" });
+    }
+
+    // Update streak (reading a topic is learning activity)
+    if (req.user) {
+      updateUserStreak(req.user);
+      await req.user.save();
     }
 
     res.status(200).json({ topic });

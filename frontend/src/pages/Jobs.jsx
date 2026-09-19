@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 import {
   Briefcase,  MapPin,  Users, ExternalLink,
   Search,  CheckCircle2,  Send, X, 
@@ -8,106 +9,11 @@ import {
 const JOB_TYPES = ['All', 'Full-time', 'Internship'];
 const LOCATIONS = ['All', 'Bangalore', 'Hyderabad', 'Pune', 'Gurgaon', 'Remote'];
 
-const MOCK_JOBS = [
-  {
-    id: 'job-1',
-    title: 'Graduate Software Development Engineer (SDE-1)',
-    company: 'Atlassian',
-    logo: '🔷',
-    location: 'Bangalore, India (Hybrid)',
-    type: 'Full-time',
-    batch: '2025 / 2026 Batch',
-    ctc: '₹22 - ₹28 LPA',
-    postedDays: '1 day ago',
-    referralAvailable: true,
-    seniorReferrer: 'Sneha Kulkarni (Atlassian)',
-    skills: ['Data Structures', 'Java / Python', 'Distributed Systems Basics', 'REST APIs'],
-    description:
-      'Join Atlassian as a Graduate SDE working on Jira and Confluence cloud architectures. You will collaborate with global teams building resilient microservices.',
-    applyUrl: 'https://atlassian.com/careers' },
-  {
-    id: 'job-2',
-    title: 'Software Engineering Intern (Summer 2026)',
-    company: 'Microsoft',
-    logo: '🪟',
-    location: 'Hyderabad / Bangalore',
-    type: 'Internship',
-    batch: '2026 / 2027 Batch',
-    ctc: '₹1,25,000 / month',
-    postedDays: '3 days ago',
-    referralAvailable: true,
-    seniorReferrer: 'Priya Patel (Microsoft)',
-    skills: ['C++ / C#', 'Algorithms', 'OOP Concepts', 'Problem Solving'],
-    description:
-      'Exciting 2-month summer internship for pre-final year students. High pre-placement offer (PPO) conversion rate based on project delivery.',
-    applyUrl: 'https://careers.microsoft.com' },
-  {
-    id: 'job-3',
-    title: 'SDE 1 — Core Backend',
-    company: 'Amazon',
-    logo: '📦',
-    location: 'Bangalore, India',
-    type: 'Full-time',
-    batch: '2024 / 2025 Batch',
-    ctc: '₹28 - ₹34 LPA',
-    postedDays: '5 days ago',
-    referralAvailable: true,
-    seniorReferrer: 'Rohan Verma (Amazon)',
-    skills: ['Java', 'Spring Boot', 'AWS Cloud', 'Low-Level Design'],
-    description:
-      'Looking for passionate engineers with strong problem-solving skills and a solid grasp of AWS infrastructure and concurrency paradigms.',
-    applyUrl: 'https://amazon.jobs' },
-  {
-    id: 'job-4',
-    title: 'Frontend Engineer (React / Next.js)',
-    company: 'Uber',
-    logo: '🚗',
-    location: 'Hyderabad, India',
-    type: 'Full-time',
-    batch: '2025 Batch',
-    ctc: '₹20 - ₹26 LPA',
-    postedDays: '1 week ago',
-    referralAvailable: true,
-    seniorReferrer: 'Aditya Mehta (Uber)',
-    skills: ['TypeScript', 'React.js', 'State Management', 'Web Performance'],
-    description:
-      'Build consumer-facing rider and driver web experiences serving millions of daily trips globally with sub-second latency.',
-    applyUrl: 'https://uber.com/careers' },
-  {
-    id: 'job-5',
-    title: 'Full Stack Engineering Intern',
-    company: 'Zepto',
-    logo: '⚡',
-    location: 'Bangalore / Remote',
-    type: 'Internship',
-    batch: '2026 Batch',
-    ctc: '₹60,000 / month',
-    postedDays: '2 days ago',
-    referralAvailable: false,
-    skills: ['Node.js', 'React', 'MongoDB / Postgres', 'Redis'],
-    description:
-      'Fast-paced quick commerce engineering team. Solve real-time inventory dispatch and delivery partner routing challenges.',
-    applyUrl: 'https://zeptonow.com' },
-  {
-    id: 'job-6',
-    title: 'Associate Product Engineer',
-    company: 'Razorpay',
-    logo: '💳',
-    location: 'Bangalore, India',
-    type: 'Full-time',
-    batch: '2025 Batch',
-    ctc: '₹18 - ₹22 LPA',
-    postedDays: '4 days ago',
-    referralAvailable: false,
-    skills: ['Go / Python', 'SQL Database Tuning', 'Fintech Security', 'Microservices'],
-    description:
-      'Power the payment rails of India. Opportunity to work on mission-critical transactional pipelines handling billions in monthly volume.',
-    applyUrl: 'https://razorpay.com/jobs' },
-];
-
 export default function Jobs() {
   useAuth();
-  const [jobs] = useState(MOCK_JOBS);
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('All');
   const [selectedLocation, setSelectedLocation] = useState('All');
@@ -120,22 +26,39 @@ export default function Jobs() {
   const [referralSent, setReferralSent] = useState(false);
   const [sentReferrals, setSentReferrals] = useState([]);
 
-  const handleSendReferralRequest = (e) => {
+  useEffect(() => {
+    api.get('/jobs')
+      .then(res => {
+        setJobs(res || []);
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSendReferralRequest = async (e) => {
     e.preventDefault();
     if (!referralResume.trim()) {
       alert('Please provide a link to your resume (Google Drive or Dropbox).');
       return;
     }
 
-    setSentReferrals([...sentReferrals, selectedJobForReferral.id]);
-    setReferralSent(true);
+    try {
+      await api.post(`/jobs/${selectedJobForReferral.id}/referral`, {
+        resumeUrl: referralResume,
+        note: referralNote
+      });
+      setSentReferrals([...sentReferrals, selectedJobForReferral.id]);
+      setReferralSent(true);
 
-    setTimeout(() => {
-      setSelectedJobForReferral(null);
-      setReferralSent(false);
-      setReferralResume('');
-      setReferralNote('');
-    }, 1300);
+      setTimeout(() => {
+        setSelectedJobForReferral(null);
+        setReferralSent(false);
+        setReferralResume('');
+        setReferralNote('');
+      }, 1300);
+    } catch (err) {
+      alert(err.message || 'Failed to send referral request');
+    }
   };
 
   const filteredJobs = jobs.filter((job) => {
@@ -148,6 +71,10 @@ export default function Jobs() {
     const matchReferral = !onlyReferrals || job.referralAvailable;
     return matchSearch && matchType && matchLocation && matchReferral;
   });
+
+  if (loading) {
+    return <div className="page-container max-w-5xl mx-auto py-20 text-center"><span className="badge badge-primary">Loading Jobs...</span></div>;
+  }
 
   return (
     <div className="page-container max-w-5xl mx-auto space-y-6 animate-fade-in">
@@ -251,7 +178,7 @@ export default function Jobs() {
                 {/* Left info */}
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-[var(--color-bg)] border border-[var(--color-border)] flex items-center justify-center text-2xl shadow-inner shrink-0">
-                    {job.logo}
+                    {job.logo || '💼'}
                   </div>
 
                   <div className="space-y-1">
@@ -262,6 +189,11 @@ export default function Jobs() {
                       {job.referralAvailable && (
                         <span className="badge badge-success text-[10px] py-0 flex items-center gap-0.5">
                           <ShieldCheck size={11} /> Senior Referral
+                        </span>
+                      )}
+                      {job.matchScore !== undefined && (
+                        <span className="badge text-[10px] py-0 flex items-center gap-0.5" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
+                          🎯 {job.matchScore}% Match
                         </span>
                       )}
                     </div>
@@ -282,7 +214,7 @@ export default function Jobs() {
 
                     {/* Skill tags */}
                     <div className="flex flex-wrap gap-1.5 pt-2">
-                      {job.skills.map((skill) => (
+                      {job.skills?.map((skill) => (
                         <span
                           key={skill}
                           className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-[var(--color-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]"
@@ -365,7 +297,7 @@ export default function Jobs() {
                 </div>
                 <h3 className="font-bold text-base text-[var(--color-text)]">Referral Request Sent!</h3>
                 <p className="text-xs text-[var(--color-text-muted)]">
-                  {selectedJobForReferral.seniorReferrer} will review your resume and submit your internal profile to the hiring team.
+                  {selectedJobForReferral.seniorReferrer || 'The senior'} will review your resume and submit your internal profile to the hiring team.
                 </p>
               </div>
             ) : (
@@ -376,7 +308,7 @@ export default function Jobs() {
                   <div>
                     <p className="font-bold text-[var(--color-text)]">Campus Senior Available:</p>
                     <p className="text-[11px] text-[var(--color-primary)] font-medium">
-                      {selectedJobForReferral.seniorReferrer}
+                      {selectedJobForReferral.seniorReferrer || 'Alumni Referrer'}
                     </p>
                   </div>
                 </div>

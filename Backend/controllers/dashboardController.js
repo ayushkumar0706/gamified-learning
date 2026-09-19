@@ -1,6 +1,8 @@
 const Progress = require('../Models/progress');
-const Attempt = require('../Models/attempt');
-const User = require('../Models/user');
+const Attempt  = require('../Models/attempt');
+const User     = require('../Models/user');
+const Level    = require('../Models/level');
+const Topic    = require('../Models/topic');
 const UserLevelProgress = require('../Models/userLevelProgress');
 const { calculateLevel } = require('../utils/xpToLevel');
 const { getISTDayDifference } = require('../utils/streak');
@@ -13,17 +15,21 @@ const dashboardController = async (req, res) => {
 
     let displayStreak = req.user.currentStreak;
     if (req.user.lastActivityDate) {
-    const daysSinceActivity = getISTDayDifference(req.user.lastActivityDate, new Date());
-    if (daysSinceActivity > 1) {
+      const daysSinceActivity = getISTDayDifference(req.user.lastActivityDate, new Date());
+      if (daysSinceActivity > 1) {
         displayStreak = 0;
-    }
+      }
     }
 
     const progressDocs = await Progress.find({ user: req.user._id });
+    const completedTopicIds = new Set(
+      progressDocs.filter(p => p.status === 'completed').map(p => (p.topic?._id || p.topic).toString())
+    );
+
     const progressSummary = {
-      totalTopics: progressDocs.length,
-      completedTopics: progressDocs.filter(p => p.status === "completed").length,
-      inProgressTopics: progressDocs.filter(p => p.status === "in-progress").length
+      totalTopics:     progressDocs.length,
+      completedTopics: completedTopicIds.size,
+      inProgressTopics: progressDocs.filter(p => p.status === 'in-progress').length
     };
 
     const recentAttemptsRaw = await Attempt.find({ user: req.user._id })
@@ -32,19 +38,16 @@ const dashboardController = async (req, res) => {
       .populate({
         path: 'quiz',
         select: 'topic',
-        populate: {
-          path: 'topic',
-          select: 'title'
-        }
+        populate: { path: 'topic', select: 'title' }
       });
 
-    const recentAttempts = recentAttemptsRaw.map((attempt) => ({
-      topicTitle: attempt.quiz?.topic?.title ?? "Unknown Topic",
+    const recentAttempts = recentAttemptsRaw.map(attempt => ({
+      topicTitle:      attempt.quiz?.topic?.title ?? 'Unknown Topic',
       scorePercentage: attempt.scorePercentage,
-      completedAt: attempt.createdAt
+      completedAt:     attempt.createdAt
     }));
 
-    // Cleared career levels (for Journey mini-map active index)
+    // Cleared career levels
     const clearedLevelDocs = await UserLevelProgress.find({ user: req.user._id })
       .select('level')
       .sort({ createdAt: 1 });
@@ -61,6 +64,36 @@ const dashboardController = async (req, res) => {
       collegeRank = higherCount + 1;
     }
 
+    // ── Recommended topics: next 3 incomplete topics from the active level ──
+    let recommendedTopics = [];
+    try {
+      // Active level = first level not yet cleared (by order)
+      const allLevels = await Level.find().sort({ order: 1 }).select('_id name order icon color');
+      const activeLevel = allLevels.find(l => !clearedLevelIds.includes(l._id.toString())) || allLevels[0];
+
+      if (activeLevel) {
+        const activeTopics = await Topic.find({ level: activeLevel._id })
+          .sort({ order: 1 })
+          .select('_id title subject description desciription');
+
+        recommendedTopics = activeTopics
+          .filter(t => !completedTopicIds.has(t._id.toString()))
+          .slice(0, 3)
+          .map(t => ({
+            _id:        t._id,
+            title:      t.title,
+            subject:    t.subject,
+            description: t.description || t.desciription || null,
+            levelName:  activeLevel.name,
+            levelIcon:  activeLevel.icon,
+            levelColor: activeLevel.color
+          }));
+      }
+    } catch {
+      // Non-fatal: if recommendations fail, dashboard still loads
+      recommendedTopics = [];
+    }
+
     res.status(200).json({
       dashboard: {
         xp: req.user.xp,
@@ -71,7 +104,8 @@ const dashboardController = async (req, res) => {
         progressSummary,
         recentAttempts,
         clearedLevelIds,
-        collegeRank
+        collegeRank,
+        recommendedTopics
       }
     });
   } catch (error) {
@@ -81,4 +115,4 @@ const dashboardController = async (req, res) => {
 
 
 
-module.exports = { dashboardController };
+module.exports = { dashboardController };

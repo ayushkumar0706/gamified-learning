@@ -3,10 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Link } from 'react-router-dom';
 import {
-    Zap,  
-    Target, CheckCircle2,
-        Trophy,
-  BookOpen, ArrowRight, Star, ChevronRight, Rocket
+  Zap, Target, CheckCircle2, Trophy,
+  BookOpen, ArrowRight, Star, ChevronRight, Rocket, Sparkles
 } from 'lucide-react';
 
 // ── Skeleton loader ──────────────────────────────────────────────────────────
@@ -259,16 +257,17 @@ export default function Dashboard() {
     </div>
   );
 
-  const { 
-    xp = 0, 
-    level = 1, 
-    xpToNextLevel = 100, 
-    streak = 0, 
-    maxStreak = 0, 
-    progressSummary = {}, 
-    recentAttempts = [], 
-    clearedLevelIds = [], 
-    collegeRank = null 
+  const {
+    xp = 0,
+    level = 1,
+    xpToNextLevel = 100,
+    streak = 0,
+    maxStreak = 0,
+    progressSummary = {},
+    recentAttempts = [],
+    clearedLevelIds = [],
+    collegeRank = null,
+    recommendedTopics = []
   } = dashboard || {};
 
   return (
@@ -328,13 +327,53 @@ export default function Dashboard() {
 
       {/* ── Main content grid ── */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Journey mini map + Progress */}
+        {/* Journey mini map + Progress + Recommendations */}
         <div className="lg:col-span-2 space-y-4">
           <JourneyMiniMap
             completedTopics={progressSummary?.completedTopics ?? 0}
             totalTopics={progressSummary?.totalTopics ?? 0}
             clearedCount={clearedLevelIds?.length ?? 0}
           />
+
+          {/* Recommended For You */}
+          {recommendedTopics.length > 0 && (
+            <div className="card">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="section-title mb-0 flex items-center gap-1.5">
+                  <Sparkles size={15} className="text-[var(--color-xp)]" />
+                  What to Do Next
+                </h2>
+                <Link to="/learn" className="text-xs text-[var(--color-primary)] font-semibold hover:underline flex items-center gap-1">
+                  All topics <ChevronRight size={12} />
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {recommendedTopics.map((topic) => (
+                  <Link
+                    key={topic._id}
+                    to={`/topics/${topic._id}`}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-bg)] hover:bg-[var(--color-primary-light)] group transition-all border border-[var(--color-border)] hover:border-[var(--color-primary)]/30"
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0"
+                      style={{ background: `${topic.levelColor}20`, color: topic.levelColor }}
+                    >
+                      {topic.levelIcon || '📚'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)] truncate transition-colors">
+                        {topic.title}
+                      </p>
+                      {topic.subject && (
+                        <p className="text-xs text-[var(--color-text-muted)] truncate">{topic.subject}</p>
+                      )}
+                    </div>
+                    <ChevronRight size={14} className="text-[var(--color-text-subtle)] group-hover:text-[var(--color-primary)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Progress detail */}
           <div className="card">
@@ -417,20 +456,39 @@ export default function Dashboard() {
       </div>
 
       {/* ── CTA banner ── */}
-      <div
-        className="rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)' }}
-      >
-        <div className="absolute right-0 top-0 w-48 h-48 bg-white/10 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2" />
-        <div className="flex-1 relative">
-          <p className="text-white font-black text-lg">Ready to level up?</p>
-          <p className="text-white/70 text-sm mt-0.5">Continue your DSA journey. You're 60% through.</p>
-        </div>
-        <Link to="/learn" className="btn bg-white text-[var(--color-primary-dark)] font-bold hover:shadow-lg transition-all shrink-0 relative">
-          Continue Learning
-          <ArrowRight size={16} />
-        </Link>
-      </div>
+      {(() => {
+        // Derive the current active level name and real progress pct
+        const activeLevelIndex = Math.min(clearedLevelIds?.length ?? 0, LEVEL_META.length - 1);
+        const activeLevel = LEVEL_META[activeLevelIndex];
+        const progressPct = progressSummary?.totalTopics > 0
+          ? Math.round((progressSummary.completedTopics / progressSummary.totalTopics) * 100)
+          : 0;
+
+        return (
+          <div
+            className="rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 relative overflow-hidden"
+            style={{ background: `linear-gradient(135deg, #4F46E5, #7C3AED)` }}
+          >
+            <div className="absolute right-0 top-0 w-48 h-48 bg-white/10 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2" />
+            <div className="flex-1 relative">
+              <p className="text-white font-black text-lg">
+                {activeLevel.icon} Ready to level up?
+              </p>
+              <p className="text-white/70 text-sm mt-0.5">
+                {clearedLevelIds?.length === LEVEL_META.length
+                  ? 'You\'ve completed all levels — a true placement champion! 🎓'
+                  : progressPct > 0
+                  ? `Continue your ${activeLevel.name} journey — you're ${progressPct}% through your topics.`
+                  : `Start your ${activeLevel.name} level — your career journey awaits!`}
+              </p>
+            </div>
+            <Link to="/journey" className="btn bg-white text-[var(--color-primary-dark)] font-bold hover:shadow-lg transition-all shrink-0 relative">
+              {clearedLevelIds?.length === LEVEL_META.length ? 'View Journey' : 'Continue Learning'}
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        );
+      })()}
     </div>
   );
 }

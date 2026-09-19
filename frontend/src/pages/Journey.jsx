@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import {
   CheckCircle2, Lock, ChevronDown, ChevronUp, BookOpen,
-  Zap, Star, ArrowRight, Sparkles, Target, Award, Loader2
+  Zap, Star, ArrowRight, Sparkles, Target, Award, Loader2, Info
 } from 'lucide-react';
 
 const LEVEL_DEFAULTS = {
@@ -31,19 +31,31 @@ function JourneySkeleton() {
   );
 }
 
-function CriterionRow({ criterion, met }) {
+function CriterionRow({ criterion, met, pending, note }) {
   return (
-    <div className={`flex items-start gap-2.5 py-1.5 ${met ? 'opacity-100' : 'opacity-70'}`}>
+    <div className={`flex items-start gap-2.5 py-1.5 ${met || pending ? 'opacity-100' : 'opacity-70'}`}>
       <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-        met ? 'bg-[var(--color-success)] text-white' : 'border-2 border-[var(--color-border)]'
+        met && !pending
+          ? 'bg-[var(--color-success)] text-white'
+          : pending
+          ? 'bg-amber-500/20 text-amber-500'
+          : 'border-2 border-[var(--color-border)]'
       }`}>
-        {met && <CheckCircle2 size={12} />}
+        {met && !pending && <CheckCircle2 size={12} />}
+        {pending && <Info size={10} />}
       </div>
       <div>
-        <p className={`text-sm font-medium ${met ? 'text-[var(--color-text)] line-through decoration-[var(--color-success)]' : 'text-[var(--color-text)]'}`}>
+        <p className={`text-sm font-medium ${
+          met && !pending ? 'text-[var(--color-text)] line-through decoration-[var(--color-success)]'
+          : pending ? 'text-amber-600 dark:text-amber-400'
+          : 'text-[var(--color-text)]'
+        }`}>
           {criterion.label}
         </p>
-        {criterion.description && (
+        {note && (
+          <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-0.5 italic">{note}</p>
+        )}
+        {!note && criterion.description && (
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{criterion.description}</p>
         )}
       </div>
@@ -53,6 +65,29 @@ function CriterionRow({ criterion, met }) {
 
 function LevelDetailPanel({ level, topics, progress, status, color, onClear, isClearing }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // State for placement offer
+  const [placementCompany, setPlacementCompany] = useState('');
+  const [placementRole, setPlacementRole] = useState('');
+  const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
+  
+  const handlePlacementSubmit = async (e) => {
+    e.preventDefault();
+    if (!placementCompany.trim() || !placementRole.trim()) return;
+    try {
+      setIsSubmittingOffer(true);
+      const res = await api.post('/users/placement', { company: placementCompany, role: placementRole });
+      if (res.success) {
+        window.location.reload(); // Quickest way to refresh user context and criteria
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to log placement offer');
+    } finally {
+      setIsSubmittingOffer(false);
+    }
+  };
   
   const completedTopics = topics.filter(t => {
     const p = progress.find(p => p.topic?._id === t._id || p.topic === t._id);
@@ -64,17 +99,47 @@ function LevelDetailPanel({ level, topics, progress, status, color, onClear, isC
     : 0;
 
   const criteriaResults = (level.clearanceCriteria ?? []).map(c => {
-    let met;
+    let met = false;
+    let pending = false;
+    let note = null;
+
     if (c.type === 'topic-completion') {
-      const completed = progress.filter(p => p.status === 'completed' && topics.some(t => t._id === (p.topic?._id || p.topic))).length;
+      const completed = progress.filter(p =>
+        p.status === 'completed' && topics.some(t => t._id === (p.topic?._id || p.topic))
+      ).length;
       met = completed >= (c.targetCount ?? 1);
     } else if (c.type === 'quiz-pass') {
-      const passed = progress.filter(p => p.bestScorePercentage >= 70 && topics.some(t => t._id === (p.topic?._id || p.topic))).length;
+      const passed = progress.filter(p =>
+        p.bestScorePercentage >= 70 && topics.some(t => t._id === (p.topic?._id || p.topic))
+      ).length;
       met = passed >= (c.targetCount ?? 1);
-    } else {
+    } else if (c.type === 'problem-count') {
+      // Client can't count attempts — show as pending with guidance
+      pending = true;
+      met = true; // backend will do real enforcement
+      note = `Complete at least ${c.targetCount ?? 1} quiz attempts in this level to satisfy this criterion.`;
+    } else if (c.type === 'challenge') {
+      pending = true;
       met = true;
+      note = 'This criterion will be verified manually or via an upcoming challenge system.';
+    } else if (c.type === 'project') {
+      pending = true;
+      met = true;
+      note = 'Submit your project link to a senior or admin for verification.';
+    } else if (c.type === 'manual') {
+      if (c.criteriaId === 'receive-offer') {
+        const hasOffer = !!(user && user.placementOffer && user.placementOffer.company);
+        pending = !hasOffer;
+        met = hasOffer;
+        note = hasOffer ? 'Offer verified!' : 'Please log your placement offer to complete this level.';
+      } else {
+        met = true;
+      }
+    } else {
+      met = true; // default
     }
-    return { ...c, met };
+
+    return { ...c, met, pending, note };
   });
   const allCriteriaMet = criteriaResults.every(c => c.met);
 
@@ -187,9 +252,39 @@ function LevelDetailPanel({ level, topics, progress, status, color, onClear, isC
             </p>
             <div className="space-y-0.5">
               {criteriaResults.map((c) => (
-                <CriterionRow key={c.criteriaId} criterion={c} met={status === 'done' || c.met} />
+                <CriterionRow key={c.criteriaId} criterion={c} met={status === 'done' || c.met} pending={c.pending} note={c.note} />
               ))}
             </div>
+            
+            {/* Inline Placement Form for Level 7 */}
+            {criteriaResults.find(c => c.criteriaId === 'receive-offer' && c.pending) && status === 'active' && (
+              <form onSubmit={handlePlacementSubmit} className="mt-4 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] space-y-3">
+                <p className="text-sm font-bold text-[var(--color-text)] mb-2">🎉 Log Your Placement Offer</p>
+                <input 
+                  type="text" 
+                  placeholder="Company Name (e.g., Google, Amazon)" 
+                  value={placementCompany}
+                  onChange={e => setPlacementCompany(e.target.value)}
+                  className="input w-full text-sm"
+                  required
+                />
+                <input 
+                  type="text" 
+                  placeholder="Role (e.g., SDE Intern, Frontend Engineer)" 
+                  value={placementRole}
+                  onChange={e => setPlacementRole(e.target.value)}
+                  className="input w-full text-sm"
+                  required
+                />
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingOffer}
+                  className="btn btn-primary w-full text-sm flex items-center justify-center gap-2"
+                >
+                  {isSubmittingOffer ? 'Logging...' : 'Submit Offer & Level Up'}
+                </button>
+              </form>
+            )}
           </div>
         )}
 

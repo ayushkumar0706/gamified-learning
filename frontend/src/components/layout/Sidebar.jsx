@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   Zap, LayoutDashboard, Map, BookOpen, Trophy, Users,
   GraduationCap, MessageSquare, Briefcase, Medal, User,
-  Settings, LogOut
+  Settings, LogOut, Building2
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -44,14 +44,32 @@ export default function Sidebar() {
 
       {/* User mini-profile */}
       {user && (
-        <div className="flex items-center gap-3 px-4 py-3.5 mx-3 mt-3 rounded-xl bg-white/5">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center text-white font-bold text-sm shrink-0">
-            {user.firstName?.[0]?.toUpperCase()}
+        <div className="mx-3 mt-3 space-y-1.5">
+          {/* Name + Level */}
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center text-white font-bold text-sm shrink-0">
+              {user.firstName?.[0]?.toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-semibold truncate">{user.firstName} {user.lastName}</p>
+              <p className="text-[var(--color-sidebar-text)] text-xs truncate">Level {user.level || 1}</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-semibold truncate">{user.firstName} {user.lastName}</p>
-            <p className="text-[var(--color-sidebar-text)] text-xs truncate">Level {user.level || 1}</p>
-          </div>
+
+          {/* College badge */}
+          {user.college ? (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/5">
+              <Building2 size={13} className="text-[var(--color-primary)] shrink-0" />
+              <p className="text-[var(--color-sidebar-text)] text-xs font-medium truncate">
+                {user.college.name ?? 'Your College'}
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/5 opacity-60">
+              <Building2 size={13} className="text-[var(--color-sidebar-text)] shrink-0" />
+              <p className="text-[var(--color-sidebar-text)] text-xs truncate">No college set</p>
+            </div>
+          )}
         </div>
       )}
 

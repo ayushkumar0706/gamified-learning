@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import {
   Trophy, Flame, Zap, Users, AlertCircle
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function LeaderboardSkeleton() {
@@ -69,24 +70,26 @@ function LeaderboardRow({ entry, filter, isSticky = false }) {
       </div>
 
       {/* Avatar */}
-      <Avatar name={entry.name} size={isTop3 ? 'md' : 'sm'} />
+      <Link to={`/profile/${entry.userId || entry.id}`} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+        <Avatar name={entry.name} size={isTop3 ? 'md' : 'sm'} />
 
-      {/* Name & meta */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className={`font-bold truncate ${isTop3 ? 'text-base' : 'text-sm'} text-[var(--color-text)]`}>
-            {entry.name}
-            {entry.isCurrentUser && (
-              <span className="ml-1.5 text-xs badge badge-primary">You</span>
-            )}
+        {/* Name & meta */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className={`font-bold truncate ${isTop3 ? 'text-base' : 'text-sm'} text-[var(--color-text)]`}>
+              {entry.name}
+              {entry.isCurrentUser && (
+                <span className="ml-1.5 text-xs badge badge-primary">You</span>
+              )}
+            </p>
+          </div>
+          <p className="text-xs text-[var(--color-text-muted)] truncate">
+            {[entry.branch, entry.year ? `Year ${entry.year}` : null]
+              .filter(Boolean)
+              .join(' · ') || 'Student'}
           </p>
         </div>
-        <p className="text-xs text-[var(--color-text-muted)] truncate">
-          {[entry.branch, entry.year ? `Year ${entry.year}` : null]
-            .filter(Boolean)
-            .join(' · ') || 'Student'}
-        </p>
-      </div>
+      </Link>
 
       {/* Stats */}
       <div className="flex items-center gap-4 shrink-0">

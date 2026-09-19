@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
@@ -7,99 +7,6 @@ import {
   ChevronRight, X, AlertCircle, Award } from 'lucide-react';
 
 const COMPANIES = ['All', 'Google', 'Microsoft', 'Amazon', 'Atlassian', 'Uber', 'Flipkart', 'Startups'];
-
-const MOCK_SENIORS = [
-  {
-    id: 'sen-1',
-    name: 'Aarav Sharma',
-    role: 'Software Development Engineer 1',
-    company: 'Google',
-    companyColor: 'from-blue-500 to-green-500',
-    college: 'IIT / Top Tier Campus',
-    branch: 'Computer Science',
-    year: 'Class of 2024',
-    rating: 4.9,
-    sessionsCount: 38,
-    responseTime: '~2 hrs',
-    skills: ['DSA & LeetCode 400+', 'System Design', 'Resume Review', 'Google Interview Prep'],
-    bio: 'Placed at Google through off-campus drive. Passionate about helping juniors crack algorithmic rounds and craft high-impact resumes.',
-    availableDays: ['Saturday', 'Sunday', 'Wednesday Evening'] },
-  {
-    id: 'sen-2',
-    name: 'Priya Patel',
-    role: 'Frontend Engineer II',
-    company: 'Microsoft',
-    companyColor: 'from-cyan-500 to-blue-600',
-    college: 'Tech Campus',
-    branch: 'Information Technology',
-    year: 'Class of 2023',
-    rating: 5.0,
-    sessionsCount: 52,
-    responseTime: '< 1 hr',
-    skills: ['React & Next.js', 'Frontend System Design', 'Portfolio Reviews', 'Referrals'],
-    bio: '2+ years at Microsoft. Mentored 50+ students into product companies. Happy to review portfolios, projects, and conduct mock interviews.',
-    availableDays: ['Friday Evening', 'Sunday Afternoon'] },
-  {
-    id: 'sen-3',
-    name: 'Rohan Verma',
-    role: 'Backend SDE',
-    company: 'Amazon',
-    companyColor: 'from-amber-500 to-orange-600',
-    college: 'Engineering Institute',
-    branch: 'Computer Science',
-    year: 'Class of 2024',
-    rating: 4.8,
-    sessionsCount: 29,
-    responseTime: '~3 hrs',
-    skills: ['Java & Spring Boot', 'AWS & Cloud Architecture', 'Low-Level Design', 'Amazon LP Prep'],
-    bio: 'Cracked Amazon SDE-1 on-campus. Specialized in Amazon Leadership Principles and object-oriented low-level design.',
-    availableDays: ['Weekdays After 7 PM', 'Weekends'] },
-  {
-    id: 'sen-4',
-    name: 'Sneha Kulkarni',
-    role: 'Platform Engineer',
-    company: 'Atlassian',
-    companyColor: 'from-blue-600 to-indigo-700',
-    college: 'Campus Tech',
-    branch: 'Electronics & Comm.',
-    year: 'Class of 2023',
-    rating: 4.9,
-    sessionsCount: 44,
-    responseTime: '< 2 hrs',
-    skills: ['Distributed Systems', 'Go & Docker', 'Non-CS to Tech Transition', 'Mock Interviews'],
-    bio: 'Non-CS branch to Atlassian! If you are from ECE/EE and worried about coding rounds, let us build your custom roadmap together.',
-    availableDays: ['Saturday', 'Sunday Morning'] },
-  {
-    id: 'sen-5',
-    name: 'Aditya Mehta',
-    role: 'Full Stack Engineer',
-    company: 'Uber',
-    companyColor: 'from-gray-800 to-black',
-    college: 'State Tech University',
-    branch: 'Computer Science',
-    year: 'Class of 2024',
-    rating: 4.9,
-    sessionsCount: 21,
-    responseTime: '~4 hrs',
-    skills: ['Full Stack Dev', 'High Scale Microservices', 'Internship Strategies', 'Referrals'],
-    bio: 'Joined Uber after a 6-month intern conversion. Can guide you on converting intern offers into full-time PPOs.',
-    availableDays: ['Sunday', 'Tuesday Evening'] },
-  {
-    id: 'sen-6',
-    name: 'Ananya Roy',
-    role: 'Founding Engineer',
-    company: 'Startups',
-    companyColor: 'from-purple-600 to-pink-600',
-    college: 'National Institute',
-    branch: 'Computer Science',
-    year: 'Class of 2023',
-    rating: 5.0,
-    sessionsCount: 31,
-    responseTime: '< 1 hr',
-    skills: ['Fast-Paced Startups', 'AI Engineering & LLMs', 'Hackathons Winner', 'Cold Emailing'],
-    bio: 'Won 6 national hackathons and now building generative AI tooling. I guide students targeting high-equity high-growth startups.',
-    availableDays: ['Flexible / On-Demand'] },
-];
 
 const SESSION_TYPES = [
   { id: 'resume', title: '1-on-1 Resume Critique', duration: '30 mins', icon: '📄', desc: 'Detailed line-by-line feedback to beat ATS filters.' },
@@ -110,7 +17,8 @@ const SESSION_TYPES = [
 
 export default function Seniors() {
   const { user } = useAuth();
-  const [seniors] = useState(MOCK_SENIORS);
+  const [seniors, setSeniors] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompany, setSelectedCompany] = useState('All');
 
@@ -126,6 +34,19 @@ export default function Seniors() {
   const [promoting, setPromoting] = useState(false);
   const [promoMessage, setPromoMessage] = useState(null);
 
+  useEffect(() => {
+    Promise.all([
+      api.get('/seniors'),
+      api.get('/seniors/bookings/my-bookings').catch(() => ({ bookings: [] }))
+    ])
+      .then(([seniorsRes, bookingsRes]) => {
+        setSeniors(seniorsRes.seniors || []);
+        setBookedSessions(bookingsRes.bookings || []);
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
+
   const handleRequestSeniorStatus = async () => {
     setPromoting(true);
     setPromoMessage(null);
@@ -135,47 +56,62 @@ export default function Seniors() {
     } catch (err) {
       setPromoMessage({
         type: 'info',
-        text: err.message || 'Senior promotion requires 365 days on platform & 10 completed topics.' });
+        text: err.message || 'Senior promotion requires 15 completed topics.' });
     } finally {
       setPromoting(false);
     }
   };
 
-  const handleBookSession = (e) => {
+  const handleBookSession = async (e) => {
     e.preventDefault();
     if (!bookingDate) {
       alert('Please choose a preferred session date.');
       return;
     }
+    
+    setBookingStatus('submitting');
 
-    const sessionObj = {
-      id: Date.now(),
-      seniorName: selectedSenior.name,
-      company: selectedSenior.company,
-      type: SESSION_TYPES.find((s) => s.id === selectedSessionType)?.title,
-      date: bookingDate,
-      note: bookingNote };
+    try {
+      const typeTitle = SESSION_TYPES.find((s) => s.id === selectedSessionType)?.title;
+      await api.post(`/seniors/${selectedSenior.id}/book`, {
+        seniorId: selectedSenior.id,
+        type: typeTitle,
+        date: bookingDate,
+        note: bookingNote
+      });
 
-    setBookedSessions([sessionObj, ...bookedSessions]);
-    setBookingStatus('success');
+      // Refresh bookings
+      const bookingsRes = await api.get('/seniors/bookings/my-bookings');
+      setBookedSessions(bookingsRes.bookings || []);
+      
+      setBookingStatus('success');
 
-    setTimeout(() => {
-      setSelectedSenior(null);
+      setTimeout(() => {
+        setSelectedSenior(null);
+        setBookingStatus('');
+        setBookingDate('');
+        setBookingNote('');
+      }, 1200);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Failed to book session. Please try again.');
       setBookingStatus('');
-      setBookingDate('');
-      setBookingNote('');
-    }, 1200);
+    }
   };
 
   const filteredSeniors = seniors.filter((s) => {
     const matchesSearch =
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.skills.some((sk) => sk.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (s.skills || []).some((sk) => sk.toLowerCase().includes(searchQuery.toLowerCase())) ||
       s.role.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCompany = selectedCompany === 'All' || s.company === selectedCompany;
     return matchesSearch && matchesCompany;
   });
+
+  if (loading) {
+    return <div className="page-container max-w-5xl mx-auto py-20 text-center"><span className="badge badge-primary">Loading Seniors...</span></div>;
+  }
 
   return (
     <div className="page-container max-w-5xl mx-auto space-y-6 animate-fade-in">
@@ -202,7 +138,7 @@ export default function Seniors() {
           <div className="shrink-0 space-y-2">
             <div className="card p-3.5 bg-[var(--color-surface)]/80 backdrop-blur-md border border-[var(--color-border)] text-center min-w-[200px]">
               <p className="text-xs text-[var(--color-text-muted)]">Campus Mentors Active</p>
-              <p className="text-2xl font-black text-[var(--color-primary)]">24 Seniors</p>
+              <p className="text-2xl font-black text-[var(--color-primary)]">{seniors.length} Seniors</p>
               <p className="text-[10px] text-[var(--color-success)] font-semibold mt-0.5">● 100% Free for College Peers</p>
             </div>
 
@@ -313,9 +249,13 @@ export default function Seniors() {
               <div>
                 {/* Header: Senior Name, Avatar & Company badge */}
                 <div className="flex items-start gap-3.5 mb-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black text-base flex items-center justify-center shrink-0 shadow-md">
-                    {senior.name.split(' ').map((n) => n[0]).join('')}
-                  </div>
+                  {senior.photo ? (
+                    <img src={senior.photo} alt={senior.name} className="w-12 h-12 rounded-2xl object-cover shadow-md shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black text-base flex items-center justify-center shrink-0 shadow-md">
+                      {senior.name.split(' ').map((n) => n[0]).join('').substring(0, 2)}
+                    </div>
+                  )}
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
@@ -341,7 +281,7 @@ export default function Seniors() {
 
                 {/* Skills tags */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {senior.skills.map((skill) => (
+                  {(senior.skills || []).map((skill) => (
                     <span
                       key={skill}
                       className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-[var(--color-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]"
@@ -444,7 +384,7 @@ export default function Seniors() {
                     className="input w-full text-xs"
                   />
                   <p className="text-[10px] text-[var(--color-text-subtle)] mt-1">
-                    Senior available on: {selectedSenior.availableDays.join(', ')}
+                    Senior available on: {(selectedSenior.availableDays || []).join(', ') || 'Flexible'}
                   </p>
                 </div>
 
@@ -473,9 +413,10 @@ export default function Seniors() {
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary flex-1 text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                    disabled={bookingStatus === 'submitting'}
+                    className="flex-1 font-bold text-xs py-2.5 rounded-xl bg-[var(--color-primary)] text-white hover:opacity-90 transition-all flex items-center justify-center gap-1.5"
                   >
-                    Confirm Booking
+                    {bookingStatus === 'submitting' ? 'Booking...' : bookingStatus === 'success' ? 'Session Confirmed! 🎉' : 'Confirm Booking'}
                     <CheckCircle2 size={14} />
                   </button>
                 </div>

@@ -1,14 +1,31 @@
 const Post = require('../Models/post');
+const { updateUserStreak } = require('../utils/streak');
 
 exports.getPosts = async (req, res) => {
   try {
     const { college } = req.user;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const filter = req.query.filter; // 'seniors' or undefined
+
+    const query = { college };
+
+    if (filter === 'seniors') {
+      const User = require('../Models/user');
+      const seniorIds = await User.find({ role: 'senior', college }).distinct('_id');
+      query.author = { $in: seniorIds };
+    }
+
+    const totalPosts = await Post.countDocuments(query);
+    const totalPages = Math.ceil(totalPosts / limit) || 1;
     
     // Fetch posts scoped to user's college
-    const posts = await Post.find({ college })
+    const posts = await Post.find(query)
       .populate('author', 'firstName lastName role branch year seniorProfile')
       .populate('replies.author', 'firstName lastName role branch year seniorProfile')
       .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
       .lean();
       
     // Format for frontend
@@ -50,7 +67,12 @@ exports.getPosts = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      posts: formattedPosts
+      posts: formattedPosts,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalPosts: totalPosts
+      }
     });
   } catch (error) {
     console.error('Error in getPosts:', error);
@@ -77,6 +99,10 @@ exports.createPost = async (req, res) => {
 
     // Populate so we can return formatted new post
     await post.populate('author', 'firstName lastName role branch year seniorProfile');
+
+    // Update streak
+    updateUserStreak(req.user);
+    await req.user.save();
 
     res.status(201).json({
       success: true,
@@ -108,6 +134,10 @@ exports.createReply = async (req, res) => {
     if (!post) {
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
+
+    // Update streak
+    updateUserStreak(req.user);
+    await req.user.save();
 
     res.status(201).json({
       success: true,

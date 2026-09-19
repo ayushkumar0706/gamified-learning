@@ -1,153 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import {
-    Zap,   CheckCircle2 } from 'lucide-react';
+import { Zap, CheckCircle2 } from 'lucide-react';
+import { BADGE_DEFINITIONS, BADGE_CATEGORIES, RARITY_STYLES } from '../data/badges';
 
-const CATEGORIES = [
-  { id: 'all', label: 'All Achievements' },
-  { id: 'learning', label: '📚 Learning & Topics' },
-  { id: 'streak', label: '🔥 Streaks' },
-  { id: 'score', label: '🎯 Quizzes & Scores' },
-  { id: 'career', label: '💼 Career & Senior' },
-];
 
-const ALL_ACHIEVEMENTS = [
-  {
-    id: 'first-step',
-    title: 'First Step',
-    category: 'learning',
-    rarity: 'Common',
-    xpReward: 50,
-    icon: '🚀',
-    description: 'Complete your very first topic module on LearnUp.',
-    checkUnlocked: (data) => (data?.completedTopics ?? 0) >= 1,
-    getProgress: (data) => ({ current: Math.min(1, data?.completedTopics ?? 0), max: 1 }) },
-  {
-    id: 'dsa-initiate',
-    title: 'DSA Initiate',
-    category: 'learning',
-    rarity: 'Common',
-    xpReward: 100,
-    icon: '🧠',
-    description: 'Complete 3 learning topics across any level.',
-    checkUnlocked: (data) => (data?.completedTopics ?? 0) >= 3,
-    getProgress: (data) => ({ current: Math.min(3, data?.completedTopics ?? 0), max: 3 }) },
-  {
-    id: 'dsa-warrior',
-    title: 'DSA Warrior',
-    category: 'learning',
-    rarity: 'Rare',
-    xpReward: 250,
-    icon: '⚔️',
-    description: 'Complete 6 core topics and build solid foundations.',
-    checkUnlocked: (data) => (data?.completedTopics ?? 0) >= 6,
-    getProgress: (data) => ({ current: Math.min(6, data?.completedTopics ?? 0), max: 6 }) },
-  {
-    id: 'streak-starter',
-    title: 'Spark of Habit',
-    category: 'streak',
-    rarity: 'Common',
-    xpReward: 50,
-    icon: '⚡',
-    description: 'Maintain an active daily learning streak for 2 days.',
-    checkUnlocked: (data) => (data?.streak ?? 0) >= 2 || (data?.maxStreak ?? 0) >= 2,
-    getProgress: (data) => ({ current: Math.min(2, Math.max(data?.streak ?? 0, data?.maxStreak ?? 0)), max: 2 }) },
-  {
-    id: 'streak-fire',
-    title: 'On Fire',
-    category: 'streak',
-    rarity: 'Rare',
-    xpReward: 150,
-    icon: '🔥',
-    description: 'Maintain a 5-day continuous learning streak.',
-    checkUnlocked: (data) => (data?.streak ?? 0) >= 5 || (data?.maxStreak ?? 0) >= 5,
-    getProgress: (data) => ({ current: Math.min(5, Math.max(data?.streak ?? 0, data?.maxStreak ?? 0)), max: 5 }) },
-  {
-    id: 'streak-legend',
-    title: 'Habit Champion',
-    category: 'streak',
-    rarity: 'Legendary',
-    xpReward: 500,
-    icon: '👑',
-    description: 'Reach an unbelievable 14-day study streak!',
-    checkUnlocked: (data) => (data?.streak ?? 0) >= 14 || (data?.maxStreak ?? 0) >= 14,
-    getProgress: (data) => ({ current: Math.min(14, Math.max(data?.streak ?? 0, data?.maxStreak ?? 0)), max: 14 }) },
-  {
-    id: 'quiz-ace',
-    title: 'Quiz Ace',
-    category: 'score',
-    rarity: 'Common',
-    xpReward: 80,
-    icon: '🎯',
-    description: 'Score 80% or higher on any topic assessment.',
-    checkUnlocked: (data) => data?.recentAttempts?.some((a) => a.scorePercentage >= 80),
-    getProgress: (data) => {
-      const topScore = Math.max(0, ...(data?.recentAttempts?.map((a) => a.scorePercentage) || [0]));
-      return { current: Math.min(80, topScore), max: 80, unit: '%' };
-    } },
-  {
-    id: 'perfect-score',
-    title: 'Flawless Victory',
-    category: 'score',
-    rarity: 'Epic',
-    xpReward: 300,
-    icon: '✨',
-    description: 'Achieve a 100% perfect score on a topic quiz.',
-    checkUnlocked: (data) => data?.recentAttempts?.some((a) => a.scorePercentage === 100),
-    getProgress: (data) => {
-      const hasPerfect = data?.recentAttempts?.some((a) => a.scorePercentage === 100);
-      return { current: hasPerfect ? 1 : 0, max: 1 };
-    } },
-  {
-    id: 'century-xp',
-    title: 'Century Pioneer',
-    category: 'learning',
-    rarity: 'Common',
-    xpReward: 100,
-    icon: '💎',
-    description: 'Accumulate 200 total XP from quizzes and milestones.',
-    checkUnlocked: (data) => (data?.xp ?? 0) >= 200,
-    getProgress: (data) => ({ current: Math.min(200, data?.xp ?? 0), max: 200, unit: 'XP' }) },
-  {
-    id: 'grand-master',
-    title: 'Grand Master',
-    category: 'learning',
-    rarity: 'Legendary',
-    xpReward: 1000,
-    icon: '🏆',
-    description: 'Amass 1,000+ total XP across your campus journey.',
-    checkUnlocked: (data) => (data?.xp ?? 0) >= 1000,
-    getProgress: (data) => ({ current: Math.min(1000, data?.xp ?? 0), max: 1000, unit: 'XP' }) },
-  {
-    id: 'senior-mentor',
-    title: 'Campus Guide',
-    category: 'career',
-    rarity: 'Epic',
-    xpReward: 400,
-    icon: '🎓',
-    description: 'Achieve Senior status to mentor juniors in your college.',
-    checkUnlocked: (data) => data?.userRole === 'senior' || data?.userRole === 'admin',
-    getProgress: (data) => ({
-      current: data?.userRole === 'senior' || data?.userRole === 'admin' ? 1 : 0,
-      max: 1 }) },
-  {
-    id: 'placement-ready',
-    title: 'Placement Ready',
-    category: 'career',
-    rarity: 'Legendary',
-    xpReward: 750,
-    icon: '💼',
-    description: 'Complete 10 topics and reach Level 5 on the platform.',
-    checkUnlocked: (data) => (data?.completedTopics ?? 0) >= 10 && (data?.level ?? 1) >= 5,
-    getProgress: (data) => ({ current: Math.min(10, data?.completedTopics ?? 0), max: 10, unit: 'topics' }) },
-];
-
-const RARITY_STYLES = {
-  Common: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700',
-  Rare: 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-  Epic: 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-  Legendary: 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700' };
 
 export default function Achievements() {
   const { user } = useAuth();
@@ -177,17 +34,16 @@ export default function Achievements() {
     maxStreak: dashboardData?.maxStreak ?? user?.maxStreak ?? 0,
     completedTopics: dashboardData?.progressSummary?.completedTopics ?? 0,
     recentAttempts: dashboardData?.recentAttempts || [],
-    userRole: user?.role || 'student' };
+    userRole: user?.role || 'student',
+    // DB badge IDs so level-clearance badges can be evaluated
+    dbBadgeIds: new Set((user?.badges ?? []).map((b) => b.badgeId)),
+  };
 
-  const achievementsWithStatus = ALL_ACHIEVEMENTS.map((ach) => {
+  const achievementsWithStatus = BADGE_DEFINITIONS.map((ach) => {
     const isUnlocked = ach.checkUnlocked(statsContext);
     const progress = ach.getProgress(statsContext);
     const pct = Math.min(100, Math.round((progress.current / progress.max) * 100));
-    return {
-      ...ach,
-      isUnlocked,
-      progress,
-      pct };
+    return { ...ach, isUnlocked, progress, pct };
   });
 
   const filtered = achievementsWithStatus.filter(
@@ -197,7 +53,7 @@ export default function Achievements() {
   const totalUnlocked = achievementsWithStatus.filter((a) => a.isUnlocked).length;
   const totalEarnedXP = achievementsWithStatus
     .filter((a) => a.isUnlocked)
-    .reduce((acc, curr) => acc + curr.xpReward, 0);
+    .reduce((acc, curr) => acc + (curr.xpReward ?? 0), 0);
 
   if (loading) {
     return (
@@ -255,7 +111,7 @@ export default function Achievements() {
 
       {/* ── Category Filters ── */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {CATEGORIES.map((cat) => (
+        {BADGE_CATEGORIES.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
@@ -307,7 +163,7 @@ export default function Achievements() {
 
               {/* Title & Description */}
               <h3 className="font-black text-sm text-[var(--color-text)] flex items-center gap-1.5">
-                {ach.title}
+                {ach.name ?? ach.title}
                 {ach.isUnlocked && (
                   <CheckCircle2 size={15} className="text-[var(--color-success)] shrink-0" />
                 )}

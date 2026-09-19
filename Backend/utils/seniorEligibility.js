@@ -1,7 +1,7 @@
 const Progress = require('../Models/progress');
 
-const MIN_Topics = 10;
-const MIN_Days = 365;
+const MIN_Topics = 15;
+const MIN_Days = 0; // Removed 365 day requirement so new users can become seniors after completing topics
 
 const checkSeniorEligibility = async (user) => {
   const daysSinceJoining = (Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24);

@@ -1,4 +1,5 @@
 const Job = require('../Models/job');
+const Referral = require('../Models/referral');
 
 const calculateMatchScore = (user, job) => {
   let score = 40; // base score
@@ -71,8 +72,17 @@ const requestReferral = async (req, res) => {
       return res.status(400).json({ message: 'Referrals are not available for this job' });
     }
 
-    // MVP: Just return success. In a real app, save to ReferralRequest collection.
-    res.status(200).json({ message: 'Referral request sent successfully!' });
+    // Save to Referral collection
+    const referral = new Referral({
+      job: id,
+      user: req.user._id,
+      resumeUrl: resumeUrl || 'Not provided',
+      note: note || ''
+    });
+    
+    await referral.save();
+
+    res.status(201).json({ message: 'Referral request sent successfully!' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -25,7 +25,9 @@ const validateQuestionShape = (q) => {
 
 
 const generateQuestionsForTopic = async (topicName, difficulty, count = 10) => {
-  const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
+  // gemini-1.5-flash is the stable, production-ready model.
+  // Do NOT change to gemini-3.6-flash — that model does not exist.
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `
 Generate ${count} multiple-choice quiz questions on the topic "${topicName}" for ${difficulty}-level students.

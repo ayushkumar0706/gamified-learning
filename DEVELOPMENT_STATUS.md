@@ -1,5 +1,5 @@
 # DEVELOPMENT STATUS
-> **Last Updated:** 2026-09-18
+> **Last Updated:** 2026-09-19
 > **Source:** Verified by full codebase inspection. Only verified facts are recorded here.
 
 ---
@@ -20,7 +20,20 @@
 
 ## Completed Features
 
-### Level Clearance System (NEW)
+### Session: 2026-09-19 — Vision Audit Fixes
+- [x] `GET /api/auth/me` now populates `college` with `name` and `city` fields — frontend receives college name without extra API call
+- [x] `ProtectedRoute` gates app access: if `onboardingComplete === false`, redirects to `/onboarding` (prevents leaderboard 400 errors and broken college identity for unboarded users)
+- [x] Fixed invalid Gemini model `gemini-3.6-flash` → `gemini-1.5-flash` in `generateQuestions.js` — AI quiz creation now functional in production
+- [x] Sidebar: college name badge shown below user mini-profile (uses populated `user.college.name`)
+- [x] Topbar: college name chip shown on md+ screens between page title and stats
+- [x] Dashboard CTA banner is now fully dynamic — reads active level from `clearedLevelIds` and actual topic progress % instead of hardcoded text
+- [x] `TopicList` at `/learn` now defaults to the user's active career level topics (first un-cleared level). Includes a level-switcher dropdown. Fixes the all-topics-unsorted issue.
+- [x] XP formula raised: `correctCount * 20 + (scorePercentage >= 70 ? 50 : 0)` — a 10-question perfect quiz now gives 250 XP (was 100 XP)
+- [x] Daily mission targets recalibrated: Daily Learner → 150 XP (was 50); Quiz Master reward → 50 XP; Level Up reward → 100 XP
+- [x] Dashboard API now returns `recommendedTopics`: next 3 incomplete topics from the active career level, sorted by order
+- [x] Dashboard UI: "What to Do Next" widget shows the 3 recommended topics as clickable cards
+
+### Level Clearance System (previous)
 - [x] `UserLevelProgress` model — user + level cleared pair, clearedAt, xpAwarded, badgeAwarded snapshot; unique index per user-level
 - [x] `GET /api/levels/my-progress` — returns all levels the current user has officially cleared
 - [x] `POST /api/levels/:id/clear` — server-side criteria check; awards xpReward, awards badge to user.badges, creates UserLevelProgress; returns celebration data
@@ -189,11 +202,6 @@
 - User model has `badges[]` array and storage.
 - **Issue:** No automatic badge award logic. Profile page renders `DEFAULT_BADGES` (hardcoded static array), NOT real `user.badges`.
 
-### Level Clearance / Unlocking
-- Level model has full `clearanceCriteria` schema.
-- Journey page renders criteria rows with done/not-done state (UI-computed from topic progress).
-- **Issue:** No backend endpoint to clear a level, award xpReward, award badge, or unlock prerequisites. Dashboard mini-map `activeIndex` hardcoded to `1`.
-
 ### Jobs Page
 - Full UI (job listings, filter, match-score display, apply modal).
 - Now connected to real backend!
@@ -216,8 +224,7 @@
 
 From `PROJECT_BRIEF.md`, these features do not exist in any form:
 
-1. **Level clearance backend** — `POST /api/levels/:id/clear`
-2. **Messaging / Chat** — Backend models + real-time or polling chat UI
+1. **Messaging / Chat** — Backend models + real-time or polling chat UI
 3. **Placement tracking**
 4. **Admin content management panel**
 5. **Public leaderboard** (landing page shows mock)
@@ -229,10 +236,7 @@ From `PROJECT_BRIEF.md`, these features do not exist in any form:
 
 | # | Issue | Location | Severity |
 |---|---|---|---|
-| 1 | Journey mini-map `activeIndex` hardcoded to `1`, not real progress | `Dashboard.jsx:75` | Medium |
-| 2 | Level clearance UI-only; no backend enforcement | `Journey.jsx` | High |
 | 3 | Gemini model string `gemini-3.6-flash` — verify correct model name | `generateQuestions.js:28` | Medium |
-| 11 | Leaderboard does not implement `period` filter (weekly/monthly) | `leaderboardController.js` | Medium |
 | 12 | No college rank in dashboard API response | `dashboardController.js` | Medium |
 | 14 | `createTopic` has typo `desciription` | `topicController.js:7` | Low |
 
@@ -372,11 +376,6 @@ From `PROJECT_BRIEF.md`, these features do not exist in any form:
 11. **Express 5** — Breaking changes from v4 (async error handling). Do not downgrade.
 
 ---
-
-## Current Development Priority
-
-### High Priority — Complete the Core Loop
-1. **Level Clearance Backend** — `POST /api/levels/:id/clear`: verify criteria server-side, award xpReward, award badge, mark level cleared. **Complexity: Medium.**
 
 ### Lower Priority — Phase 3+
 4. **Messaging / Chat** — Backend models + real-time or polling chat UI.

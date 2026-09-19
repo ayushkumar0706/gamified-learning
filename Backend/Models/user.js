@@ -152,6 +152,13 @@ const userSchema = new Schema({
     responseTime: { type: String, default: 'Within 24 hours' }
   },
 
+  // ── Placement Tracking ─────────────────────────────
+  placementOffer: {
+    company: { type: String, default: null },
+    role: { type: String, default: null },
+    loggedAt: { type: Date, default: null }
+  },
+
   // ── Legacy / backward compat ───────────────────────
   age: {
     type: Number,

@@ -193,4 +193,40 @@ const getLeaderboard = async (req, res) => {
   }
 };
 
-module.exports = { getLeaderboard };
+const getPublicLeaderboard = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    
+    // Fetch top users across all colleges
+    const users = await User.find({
+      profileVisibility: { $in: ['public'] }
+    })
+      .select('firstName lastName xp currentStreak branch year college')
+      .populate('college', 'name')
+      .sort({ xp: -1 })
+      .limit(limit)
+      .lean();
+
+    const leaderboard = users.map((u, index) => {
+      return {
+        rank: index + 1,
+        id: u._id,
+        name: `${u.firstName}${u.lastName ? ' ' + u.lastName : ''}`,
+        xp: u.xp,
+        level: calculateLevel(u.xp).level,
+        streak: u.currentStreak,
+        branch: u.branch || 'B.Tech',
+        college: u.college?.name || 'Unknown'
+      };
+    });
+
+    res.status(200).json({ success: true, leaderboard });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  getLeaderboard,
+  getPublicLeaderboard
+};

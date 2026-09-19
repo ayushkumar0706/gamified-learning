@@ -1,4 +1,5 @@
 const User = require('../Models/user');
+const Booking = require('../Models/booking');
 
 exports.getSeniors = async (req, res) => {
   try {
@@ -59,6 +60,63 @@ exports.getSeniors = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in getSeniors:', error);
-    res.status(500).json({ success: false, message: 'Server error fetching seniors.' });
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+};
+
+exports.bookSession = async (req, res) => {
+  try {
+    const { seniorId, type, date, note } = req.body;
+    const studentId = req.user._id;
+
+    if (!seniorId || !type || !date) {
+      return res.status(400).json({ message: 'Missing required booking fields.' });
+    }
+
+    const senior = await User.findById(seniorId);
+    if (!senior || senior.role !== 'senior') {
+      return res.status(404).json({ message: 'Senior not found.' });
+    }
+
+    const newBooking = new Booking({
+      student: studentId,
+      senior: seniorId,
+      type,
+      date,
+      note
+    });
+
+    await newBooking.save();
+
+    res.status(201).json({ success: true, booking: newBooking });
+  } catch (error) {
+    console.error('Error booking session:', error);
+    res.status(500).json({ message: 'Server error while booking session.' });
+  }
+};
+
+exports.getMyBookings = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const bookings = await Booking.find({ student: userId })
+      .populate('senior', 'firstName lastName seniorProfile')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const formattedBookings = bookings.map(b => ({
+      id: b._id,
+      seniorName: `${b.senior?.firstName} ${b.senior?.lastName || ''}`.trim(),
+      company: b.senior?.seniorProfile?.company || 'College Alumni',
+      type: b.type,
+      date: b.date,
+      note: b.note,
+      status: b.status
+    }));
+
+    res.status(200).json({ success: true, bookings: formattedBookings });
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    res.status(500).json({ message: 'Server error while fetching bookings.' });
   }
 };

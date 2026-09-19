@@ -8,23 +8,23 @@ const MISSIONS = {
   'daily-learner': {
     id: 'daily-learner',
     title: 'Daily Learner',
-    description: 'Earn 50 XP today.',
-    target: 50,
-    reward: 20
+    description: 'Earn 150 XP today.',
+    target: 150,
+    reward: 30
   },
   'quiz-master': {
     id: 'quiz-master',
     title: 'Quiz Master',
     description: 'Complete 2 Quizzes today.',
     target: 2,
-    reward: 30
+    reward: 50
   },
   'level-up': {
     id: 'level-up',
     title: 'Level Up',
     description: 'Clear 1 Level today.',
     target: 1,
-    reward: 50
+    reward: 100
   }
 };
 

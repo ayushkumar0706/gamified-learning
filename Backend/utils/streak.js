@@ -18,4 +18,25 @@ const getISTDayDifference = (date1, date2) => {
   return Math.round(diffMs / (24 * 60 * 60 * 1000));
 };
 
-module.exports = { getISTDateString, getISTDayDifference };
+const updateUserStreak = (user) => {
+  const now = new Date();
+  
+  if (!user.lastActivityDate) {
+    user.currentStreak = 1;
+  } else {
+    const dayDiff = getISTDayDifference(user.lastActivityDate, now);
+    if (dayDiff === 1) {
+      user.currentStreak += 1;
+    } else if (dayDiff > 1) {
+      user.currentStreak = 1;
+    }
+  }
+
+  user.lastActivityDate = now;
+
+  if (user.currentStreak > (user.maxStreak || 0)) {
+    user.maxStreak = user.currentStreak;
+  }
+};
+
+module.exports = { getISTDateString, getISTDayDifference, updateUserStreak };
