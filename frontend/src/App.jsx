@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import AppLayout from './components/layout/AppLayout';
+import AdminLayout from './components/layout/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 
 // Public
 import LandingPage from './pages/LandingPage';
@@ -23,6 +25,14 @@ import Seniors from './pages/Seniors';
 import Community from './pages/Community';
 import Jobs from './pages/Jobs';
 import Settings from './pages/Settings';
+import Messages from './pages/Messages';
+
+// Admin pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminJourney from './pages/admin/AdminJourney';
+import AdminTopics from './pages/admin/AdminTopics';
+import AdminModeration from './pages/admin/AdminModeration';
+import AdminQuizzes from './pages/admin/AdminQuizzes';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function AppLoading() {
@@ -58,6 +68,17 @@ function AppPage({ children, title }) {
   );
 }
 
+// ── Admin page wrapper ────────────────────────────────────────────────────────
+function AdminPage({ children, title }) {
+  return (
+    <AdminRoute>
+      <AdminLayout title={title}>
+        {children}
+      </AdminLayout>
+    </AdminRoute>
+  );
+}
+
 // ── App ────────────────────────────────────────────────────────────────────────
 export default function App() {
   const { loading } = useAuth();
@@ -70,7 +91,7 @@ export default function App() {
         <Route path="/"           element={<LandingPage />} />
         <Route path="/login"      element={<Login />} />
         <Route path="/register"   element={<Register />} />
-        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
         {/* ── Authenticated app pages ── */}
         <Route path="/dashboard"  element={<AppPage title="Dashboard"><Dashboard /></AppPage>} />
@@ -92,7 +113,20 @@ export default function App() {
         <Route path="/settings"     element={<AppPage title="Settings"><Settings /></AppPage>} />
 
         {/* Stubs for future pages */}
-        <Route path="/messages"     element={<AppPage title="Messages"><ComingSoon icon="💬" name="Direct Messages" /></AppPage>} />
+        <Route path="/messages"     element={<AppPage title="Messages"><Messages /></AppPage>} />
+
+        {/* ── Admin Area ── */}
+        <Route path="/admin"        element={<AdminPage title="Admin Panel"><AdminDashboard /></AdminPage>} />
+        {/* We can map the rest of the nav items to ComingSoon or placeholders for now */}
+        <Route path="/admin/users"  element={<AdminPage title="Users"><div className="p-8 text-center text-[var(--color-text-muted)]">Users Module Coming Soon</div></AdminPage>} />
+        <Route path="/admin/colleges" element={<AdminPage title="Colleges"><div className="p-8 text-center text-[var(--color-text-muted)]">Colleges Module Coming Soon</div></AdminPage>} />
+        <Route path="/admin/journey" element={<AdminPage title="Career Journey"><AdminJourney /></AdminPage>} />
+        <Route path="/admin/content" element={<AdminPage title="Learning Topics"><AdminTopics /></AdminPage>} />
+        <Route path="/admin/quizzes" element={<AdminPage title="Quiz Management"><AdminQuizzes /></AdminPage>} />
+        <Route path="/admin/moderation" element={<AdminPage title="Moderation Queue"><AdminModeration /></AdminPage>} />
+        <Route path="/admin/jobs"   element={<AdminPage title="Jobs"><div className="p-8 text-center text-[var(--color-text-muted)]">Jobs Module Coming Soon</div></AdminPage>} />
+        <Route path="/admin/badges" element={<AdminPage title="Badges"><div className="p-8 text-center text-[var(--color-text-muted)]">Badges Module Coming Soon</div></AdminPage>} />
+        <Route path="/admin/settings" element={<AdminPage title="Settings"><div className="p-8 text-center text-[var(--color-text-muted)]">Settings Module Coming Soon</div></AdminPage>} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />

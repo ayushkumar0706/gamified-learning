@@ -150,7 +150,7 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-wrap gap-3">
-                <Link to="/onboarding" className="btn btn-primary btn-lg">
+                <Link to="/register" className="btn btn-primary btn-lg">
                   <Rocket size={18} />
                   Start Your Journey
                 </Link>
@@ -273,7 +273,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <Link to="/onboarding" className="btn btn-primary btn-lg mt-12 inline-flex">
+          <Link to="/register" className="btn btn-primary btn-lg mt-12 inline-flex">
             Start Your Journey
             <ArrowRight size={18} />
           </Link>
@@ -489,7 +489,7 @@ export default function LandingPage() {
                 Join your college. Pick up where you left off. Level up every day.
               </p>
               <Link
-                to="/onboarding"
+                to="/register"
                 className="inline-flex items-center gap-2 bg-white text-[var(--color-primary-dark)] font-bold px-8 py-4 rounded-xl hover:shadow-xl hover:shadow-indigo-500/30 transition-all hover:-translate-y-0.5 text-lg"
               >
                 <Rocket size={20} />
@@ -514,7 +514,7 @@ export default function LandingPage() {
           </p>
           <div className="flex gap-4 text-sm text-[var(--color-text-muted)]">
             <Link to="/login" className="hover:text-[var(--color-text)] transition-colors">Login</Link>
-            <Link to="/onboarding" className="hover:text-[var(--color-text)] transition-colors">Register</Link>
+            <Link to="/register" className="hover:text-[var(--color-text)] transition-colors">Register</Link>
           </div>
         </div>
       </footer>

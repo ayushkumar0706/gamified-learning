@@ -17,6 +17,11 @@ const quizSchema = new Schema({
         enum: ["llm-generated", "manual"],
         default: "llm-generated"
     },
+    status: {
+        type: String,
+        enum: ['published', 'draft', 'archived'],
+        default: 'published'
+    },
     generatedAt: {
         type: Date,
         default: Date.now

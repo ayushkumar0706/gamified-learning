@@ -70,7 +70,7 @@ export default function PublicNavbar() {
               Login
             </Link>
             <Link
-              to="/onboarding"
+              to="/register"
               className="btn btn-primary btn-sm"
             >
               <BookOpen size={14} />
@@ -105,7 +105,7 @@ export default function PublicNavbar() {
             <Link to="/login" className="btn btn-secondary w-full justify-center" onClick={() => setMenuOpen(false)}>
               Login
             </Link>
-            <Link to="/onboarding" className="btn btn-primary w-full justify-center" onClick={() => setMenuOpen(false)}>
+            <Link to="/register" className="btn btn-primary w-full justify-center" onClick={() => setMenuOpen(false)}>
               Join Your College
             </Link>
           </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { BADGES } from '../data/badges';
-import { MapPin, Building, Calendar, Star, TrendingUp, Shield, Lock, Award, GraduationCap, Github, Linkedin, ExternalLink } from 'lucide-react';
+import { MapPin, Building, Calendar, Star, TrendingUp, Shield, Lock, Award, GraduationCap, Github, Linkedin, ExternalLink, MessageSquare, Flame } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 
 export default function PublicProfile() {
@@ -113,6 +113,11 @@ export default function PublicProfile() {
                   <Linkedin size={18} />
                 </a>
               )}
+              {/* Message Button */}
+              <Link to={`/messages?user=${profile._id}`} className="px-4 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center text-white hover:bg-[var(--color-primary-dark)] transition-colors shadow-sm ml-2 font-semibold text-sm gap-2">
+                <MessageSquare size={16} />
+                Message
+              </Link>
             </div>
           </div>
         </div>

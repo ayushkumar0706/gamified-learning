@@ -20,6 +20,23 @@
 
 ## Completed Features
 
+### Session: 2026-09-20 — Admin System & Messaging Integration
+- [x] Built `AdminRoute`, `AdminLayout`, and `AdminSidebar` for secure Admin Shell access.
+- [x] Added `GET /api/admin/stats` endpoint to provide real-time metrics for `AdminDashboard`.
+- [x] Built `AdminJourney.jsx` allowing admins to view the career level structure.
+- [x] Built `AdminTopics.jsx` allowing admins to manage learning topics and prerequisites.
+- [x] Fixed Admin login routing: admins are now correctly routed to `/admin` and are exempt from the onboarding flow.
+- [x] Built real-time/polling Messaging UI (`Messages.jsx`) and connected it to `GET /api/messages` and `POST /api/messages`.
+
+### Session: 2026-09-20 — College Identity & Onboarding Fixes
+- [x] Restructured Onboarding Flow: Users must register via `/register` (or `/login`), then authenticate, before being presented with the `/onboarding` flow.
+- [x] Onboarding Component (`Onboarding.jsx`) now operates purely for authenticated users. The `StepAccount` was completely removed from the frontend component.
+- [x] College search selection is strictly enforced. The "Add 'other' college" button was removed. Users must select a valid, existing `College` document from the database (debounced search via `GET /api/colleges?search=`). 
+- [x] A UI placeholder alert was added for users who cannot find their college, advising them to contact support for the MVP.
+- [x] `ProtectedRoute` logic accurately gates access. If `onboardingComplete` is `false`, any route other than `/onboarding` will aggressively redirect to `/onboarding`.
+- [x] Topbar (`PublicNavbar.jsx`) and Landing Page CTAs were successfully updated to point to `/register` instead of `/onboarding`.
+- [x] Backend Validation (`updateProfile`): When saving profile with `onboardingComplete: true`, the API enforces that a valid `user.college` exists and successfully queries the DB to confirm the selected `ObjectId` matches a real `College` record.
+
 ### Session: 2026-09-19 — Vision Audit Fixes
 - [x] `GET /api/auth/me` now populates `college` with `name` and `city` fields — frontend receives college name without extra API call
 - [x] `ProtectedRoute` gates app access: if `onboardingComplete === false`, redirects to `/onboarding` (prevents leaderboard 400 errors and broken college identity for unboarded users)
@@ -215,8 +232,8 @@
 - **Issue:** No backend, no real notification data.
 
 ### Messages
-- Route `/messages` exists but shows ComingSoon stub.
-- **Issue:** Not built at all.
+- Full UI with conversation list and chat window.
+- Connected to real backend (`/api/messages`).
 
 ---
 
@@ -224,11 +241,9 @@
 
 From `PROJECT_BRIEF.md`, these features do not exist in any form:
 
-1. **Messaging / Chat** — Backend models + real-time or polling chat UI
-3. **Placement tracking**
-4. **Admin content management panel**
-5. **Public leaderboard** (landing page shows mock)
-6. **College analytics**
+1. **Placement tracking**
+2. **Public leaderboard** (landing page shows mock)
+3. **College analytics**
 
 ---
 
@@ -331,7 +346,7 @@ From `PROJECT_BRIEF.md`, these features do not exist in any form:
 | Community | `Community.jsx` | Real API | Complete |
 | Jobs | `Jobs.jsx` | Real API | Complete |
 | Settings | `Settings.jsx` | Real API | Complete |
-| Messages | ComingSoon stub | None | Not built |
+| Messages | `Messages.jsx` | Real API | Complete |
 
 ### Components
 - `context/AuthContext.jsx` — global auth state
@@ -378,9 +393,8 @@ From `PROJECT_BRIEF.md`, these features do not exist in any form:
 ---
 
 ### Lower Priority — Phase 3+
-4. **Messaging / Chat** — Backend models + real-time or polling chat UI.
-9. Direct messaging
-10. Admin content management
+9. Direct messaging (Completed)
+10. Admin content management (Completed)
 11. AI mentor / personalized recommendations
 
 ---

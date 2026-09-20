@@ -19,6 +19,8 @@ const seniorRouter = require('./routes/seniorRoutes');
 const communityRouter = require('./routes/communityRoutes');
 const jobRouter = require('./routes/jobRoutes');
 const missionRouter = require('./routes/missionRoutes');
+const messageRouter = require('./routes/messageRoutes');
+const adminRouter = require('./routes/adminRoutes');
 const cors = require('cors')
 
 
@@ -54,6 +56,8 @@ app.use('/api/seniors', seniorRouter);
 app.use('/api/community/posts', communityRouter);
 app.use('/api/jobs', jobRouter);
 app.use('/api/missions', missionRouter);
+app.use('/api/messages', messageRouter);
+app.use('/api/admin', adminRouter);
 
 
 

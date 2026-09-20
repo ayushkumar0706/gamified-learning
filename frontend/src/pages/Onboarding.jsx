@@ -138,10 +138,10 @@ function StepCollege({ data, onChange }) {
         <div className="text-center py-6">
           <p className="text-sm text-[var(--color-text-muted)] mb-3">College not found?</p>
           <button
-            onClick={() => onChange({ college: 'other', collegeName: query.trim() })}
+            onClick={() => alert("For the MVP, please contact support to request adding your college, or try searching for a different keyword.")}
             className="btn btn-secondary btn-sm"
           >
-            Add "{query.trim()}"
+            Request "{query.trim()}"
           </button>
         </div>
       )}
@@ -272,77 +272,6 @@ function StepCareerGoal({ data, onChange }) {
   );
 }
 
-// ── Step 5 — Create Account ───────────────────────────────────────────────────
-function StepAccount({ data, onChange }) {
-  const [showPassword, setShowPassword] = useState(false);
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-2xl font-black text-[var(--color-text)] mb-1">Create your account</h2>
-        <p className="text-[var(--color-text-muted)]">Almost there — just a few more details.</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="input-label" htmlFor="ob-firstname">First Name</label>
-          <div className="relative">
-            <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-subtle)]" />
-            <input id="ob-firstname" type="text" value={data.firstName} onChange={(e) => onChange({ firstName: e.target.value })}
-              className="input pl-9" placeholder="Ayush" required />
-          </div>
-        </div>
-        <div>
-          <label className="input-label" htmlFor="ob-lastname">Last Name</label>
-          <div className="relative">
-            <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-subtle)]" />
-            <input id="ob-lastname" type="text" value={data.lastName} onChange={(e) => onChange({ lastName: e.target.value })}
-              className="input pl-9" placeholder="Kumar" />
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label className="input-label" htmlFor="ob-email">Email Address</label>
-        <div className="relative">
-          <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-subtle)]" />
-          <input id="ob-email" type="email" value={data.email} onChange={(e) => onChange({ email: e.target.value })}
-            className="input pl-9" placeholder="you@college.ac.in" required />
-        </div>
-      </div>
-
-      <div>
-        <label className="input-label" htmlFor="ob-password">Password</label>
-        <div className="relative">
-          <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-subtle)]" />
-          <input id="ob-password" type={showPassword ? 'text' : 'password'} value={data.password}
-            onChange={(e) => onChange({ password: e.target.value })}
-            className="input pl-9 pr-9" placeholder="Min. 8 characters" required />
-          <button type="button" onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-subtle)] hover:text-[var(--color-text)]">
-            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Summary of choices */}
-      <div className="bg-[var(--color-bg)] rounded-xl p-4 border border-[var(--color-border)] space-y-1.5">
-        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Your Setup</p>
-        {[
-          { label: '🏫 College', value: data.collegeName || '—' },
-          { label: '📅 Year',    value: data.year ? `${data.year}${['st','nd','rd','th'][Math.min(data.year-1,3)]} Year` : '—' },
-          { label: '📚 Branch',  value: data.branch || '—' },
-          { label: '🎯 Goal',    value: data.careerGoal || '—' },
-        ].map((row) => (
-          <div key={row.label} className="flex justify-between text-sm">
-            <span className="text-[var(--color-text-muted)]">{row.label}</span>
-            <span className="font-medium text-[var(--color-text)] truncate max-w-[55%] text-right">{row.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ── Main Onboarding Component ─────────────────────────────────────────────────
 
 export default function Onboarding() {
@@ -352,7 +281,7 @@ export default function Onboarding() {
   const { login, user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
-  const ACTUAL_TOTAL_STEPS = user ? 4 : 5;
+  const ACTUAL_TOTAL_STEPS = 4;
 
   const [formData, setFormData] = useState({
     college: null,
@@ -360,11 +289,8 @@ export default function Onboarding() {
     year: null,
     branch: '',
     currentPreparationLevel: '',
-    careerGoal: '',
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '' });
+    careerGoal: ''
+  });
 
   const update = (partial) => setFormData((prev) => ({ ...prev, ...partial }));
 
@@ -373,7 +299,6 @@ export default function Onboarding() {
     if (step === 1) return !!formData.year && !!formData.branch;
     if (step === 2) return !!formData.currentPreparationLevel;
     if (step === 3) return !!formData.careerGoal;
-    if (step === 4) return !!formData.firstName && !!formData.email && formData.password.length >= 8;
     return true;
   };
 
@@ -381,35 +306,19 @@ export default function Onboarding() {
     setError('');
     setSubmitting(true);
     try {
-      if (user) {
-        const body = {
-          college: formData.college !== 'other' ? formData.college : undefined,
-          year: formData.year || undefined,
-          branch: formData.branch || undefined,
-          careerGoal: formData.careerGoal || undefined,
-          currentPreparationLevel: formData.currentPreparationLevel || undefined,
-          onboardingComplete: true
-        };
-        await api.put('/users/profile', body);
-        await refreshUser();
-        navigate('/dashboard');
-      } else {
-        const body = {
-          firstName: formData.firstName,
-          lastName: formData.lastName || undefined,
-          email: formData.email,
-          password: formData.password,
-          college: formData.college !== 'other' ? formData.college : undefined,
-          year: formData.year || undefined,
-          branch: formData.branch || undefined,
-          careerGoal: formData.careerGoal || undefined,
-          currentPreparationLevel: formData.currentPreparationLevel || undefined };
-        await api.post('/auth/register', body);
-        await login(formData.email, formData.password);
-        navigate('/dashboard');
-      }
+      const body = {
+        college: formData.college,
+        year: formData.year || undefined,
+        branch: formData.branch || undefined,
+        careerGoal: formData.careerGoal || undefined,
+        currentPreparationLevel: formData.currentPreparationLevel || undefined,
+        onboardingComplete: true
+      };
+      await api.put('/users/profile', body);
+      await refreshUser();
+      navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to complete onboarding. Please ensure all details are correct.');
     } finally {
       setSubmitting(false);
     }
@@ -419,8 +328,7 @@ export default function Onboarding() {
     <StepCollege    key={0} data={formData} onChange={update} />,
     <StepAcademic   key={1} data={formData} onChange={update} />,
     <StepPrepLevel  key={2} data={formData} onChange={update} />,
-    <StepCareerGoal key={3} data={formData} onChange={update} />,
-    <StepAccount    key={4} data={formData} onChange={update} />,
+    <StepCareerGoal key={3} data={formData} onChange={update} />
   ];
 
   return (

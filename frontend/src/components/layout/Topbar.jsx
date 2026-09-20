@@ -1,10 +1,21 @@
 import { useAuth } from '../../context/AuthContext';
-import { Zap, Bell, Sun, Moon, Building2 } from 'lucide-react';
+import { Zap, Bell, Sun, Moon, Building2, MessageSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { api } from '../../services/api';
 
 export default function Topbar({ title }) {
   const { user } = useAuth();
   const [dark, setDark] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      api.get('/messages/unread-count')
+        .then(res => setUnreadMessages(res.unreadCount || 0))
+        .catch(() => {});
+    }
+  }, [user]);
 
   // Dark mode toggle
   useEffect(() => {
@@ -60,6 +71,18 @@ export default function Topbar({ title }) {
         >
           {dark ? <Sun size={16} /> : <Moon size={16} />}
         </button>
+
+        {/* Messages */}
+        <Link
+          to="/messages"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-colors relative"
+          aria-label="Messages"
+        >
+          <MessageSquare size={16} />
+          {unreadMessages > 0 && (
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[var(--color-primary)] ring-2 ring-[var(--color-card)]" />
+          )}
+        </Link>
 
         {/* Notification bell */}
         <button

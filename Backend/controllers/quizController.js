@@ -74,10 +74,10 @@ const createQuiz = async (req, res) => {
 
 const getQuizForTaking = async (req, res) => {
   try {
-    const quiz = await Quiz.findById(req.params.id).populate('topic', 'title');
+    const quiz = await Quiz.findOne({ _id: req.params.id, status: 'published' }).populate('topic', 'title');
 
     if (!quiz) {
-      return res.status(404).json({ message: "Quiz not found" });
+      return res.status(404).json({ message: "Quiz not found or not published" });
     }
 
     const questions = await Question.find({ quiz: quiz._id }).select(
@@ -103,7 +103,7 @@ const getQuizzesByTopic = async (req, res) => {
       return res.status(400).json({ message: "topic query param is required" });
     }
 
-    const quizzes = await Quiz.find({ topic });
+    const quizzes = await Quiz.find({ topic, status: 'published' });
     res.status(200).json({ quizzes });
   } catch (error) {
     res.status(500).json({ message: error.message });

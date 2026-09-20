@@ -1,4 +1,4 @@
-﻿# PROJECT BRIEF â€” GAMIFIED COLLEGE LEARNING & PLACEMENT PLATFORM
+# PROJECT BRIEF â€” GAMIFIED COLLEGE LEARNING & PLACEMENT PLATFORM
 
 I am building a modern web application for college students that combines learning, gamification, competition, community, senior guidance, and placement preparation.
 
@@ -27,22 +27,22 @@ Once they select their college, they become part of their college's learning eco
 
 The platform should allow students to:
 
-* Learn step-by-step
-* Follow a structured career roadmap
-* Complete levels
-* Earn XP
-* Maintain daily streaks
-* Earn badges
-* Take quizzes and assessments
-* Complete challenges
-* See their rank within their college
-* Compare progress with peers
-* Find and learn from seniors
-* Chat with seniors and other students
-* Ask questions
-* Track their placement preparation
-* Discover relevant jobs
-* Eventually track applications and placement progress
+* [x] Learn step-by-step
+* [x] Follow a structured career roadmap
+* [x] Complete levels
+* [x] Earn XP
+* [x] Maintain daily streaks
+* [x] Earn badges
+* [x] Take quizzes and assessments
+* [ ] Complete challenges
+* [x] See their rank within their college
+* [x] Compare progress with peers
+* [x] Find and learn from seniors
+* [x] Chat with seniors and other students
+* [x] Ask questions
+* [ ] Track their placement preparation
+* [x] Discover relevant jobs
+* [ ] Eventually track applications and placement progress
 
 The key differentiator is:
 

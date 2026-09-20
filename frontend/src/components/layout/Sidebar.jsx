@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   Zap, LayoutDashboard, Map, BookOpen, Trophy, Users,
   GraduationCap, MessageSquare, Briefcase, Medal, User,
-  Settings, LogOut, Building2
+  Settings, LogOut, Building2, ShieldAlert
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -91,6 +91,16 @@ export default function Sidebar() {
 
       {/* Bottom items */}
       <div className="px-3 py-3 border-t border-white/5 space-y-0.5">
+        {user?.role === 'admin' && (
+          <NavLink
+            to="/admin"
+            className="sidebar-item"
+            style={{ color: '#F59E0B' }}
+          >
+            <ShieldAlert size={18} />
+            <span>Admin Panel</span>
+          </NavLink>
+        )}
         {BOTTOM_ITEMS.map((item) => (
           <NavLink
             key={item.to}

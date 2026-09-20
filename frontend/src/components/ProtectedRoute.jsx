@@ -22,7 +22,8 @@ function ProtectedRoute({ children }) {
 
   // If onboarding is not complete, gate the entire app.
   // Allow /onboarding itself through to avoid a redirect loop.
-  if (!user.onboardingComplete && location.pathname !== '/onboarding') {
+  // Admins are exempt from onboarding.
+  if (!user.onboardingComplete && location.pathname !== '/onboarding' && user.role !== 'admin') {
     return <Navigate to="/onboarding" replace />
   }
 

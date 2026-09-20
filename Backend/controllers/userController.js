@@ -1,4 +1,5 @@
 const User = require('../Models/user');
+const College = require('../Models/college');
 const { checkSeniorEligibility } = require('../utils/seniorEligibility');
 
 const VALID_ROLES = ['student', 'senior', 'admin'];
@@ -82,6 +83,18 @@ const updateProfile = async (req, res) => {
         user[field] = req.body[field];
       }
     });
+
+    // Enforce valid College ObjectId if onboarding is being completed
+    if (user.onboardingComplete) {
+      if (!user.college) {
+        return res.status(400).json({ message: "A valid college is required to complete onboarding." });
+      }
+      
+      const collegeExists = await College.findById(user.college);
+      if (!collegeExists) {
+        return res.status(400).json({ message: "Invalid college selected." });
+      }
+    }
 
     await user.save();
 
